@@ -27,6 +27,13 @@ function slugDe(s) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
 }
 
+function porcentaje(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).replace(',', '.'));
+  if (!Number.isFinite(n) || n <= -100 || n > 10000) throw new ErrorPublico('Revisa el porcentaje de margen.');
+  return Math.round(n * 100) / 100;
+}
+
 function limpiarProducto(p) {
   const nombre = texto(p.nombre, 120);
   const categoria = texto(p.categoria, 60);
@@ -34,7 +41,12 @@ function limpiarProducto(p) {
   if (!categoria) throw new ErrorPublico('El producto necesita una categoría.');
   const imagen = texto(p.imagen_url, 500);
   if (imagen && !/^https:\/\//.test(imagen)) throw new ErrorPublico('La imagen debe ser una URL que empiece con https://');
+  // Costo y margen solo se tocan si vienen en la solicitud (el diálogo "Editar" no los envía).
+  const costos = {};
+  if ('costo' in p) costos.costo = entero(p.costo, { nulo: true });
+  if ('margen' in p) costos.margen = porcentaje(p.margen);
   return {
+    ...costos,
     nombre,
     slug: slugDe(texto(p.slug, 80) || nombre),
     descripcion: texto(p.descripcion, 1000),
@@ -89,6 +101,9 @@ export default ruta(['GET', 'POST'], async (req, res) => {
         return res.json(p);
       } catch (e) {
         if (String(e.message).includes('23505')) throw new ErrorPublico('Ya existe otro producto con ese nombre (slug repetido).', 409);
+        if (/PGRST204|column .*(costo|margen)/.test(String(e.message))) {
+          throw new ErrorPublico('Falta crear las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
+        }
         throw e;
       }
     }

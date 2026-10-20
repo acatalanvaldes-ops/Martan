@@ -141,32 +141,109 @@
       [...new Set(productos.map((p) => p.categoria))].map((c) => `<option value="${esc(c)}">`).join('');
     if (!productos.length) { contenido.innerHTML = '<div class="vacio">Aún no hay productos.</div>'; return; }
     const ocultos = productos.filter((p) => !p.activo).length;
-    const input = 'style="width:110px;padding:7px 9px;border-radius:8px;border:1px solid var(--borde)"';
+    // Si el producto aún tiene el precio marcador (3), el campo de precio parte vacío.
+    const precioInicial = (p) => (p.precio > 3 ? p.precio : '');
+    let categoriaActual = null;
     contenido.innerHTML = `
-      ${ocultos ? `<div class="aviso" style="margin-bottom:12px">${ocultos} producto(s) oculto(s). Escribe el precio y el stock, marca <strong>Visible</strong> y presiona <strong>Guardar</strong> en cada fila.</div>` : ''}
-      <div class="tabla-envoltura"><table>
-        <thead><tr><th>Producto</th><th>Categoría</th><th>Precio (CLP)</th><th>Stock</th><th>Visible</th><th></th></tr></thead>
-        <tbody>${productos.map((p) => `
+      <div class="aviso" style="margin-bottom:12px">
+        <strong>Cómo cargar precios:</strong> escribe el <strong>costo neto</strong> (sin IVA) y el <strong>% de margen</strong>:
+        el <strong>precio final con IVA</strong> se calcula solo (redondeado a $10). También puedes escribir el precio final y el margen se calcula al revés.
+        Después ingresa el stock, marca <strong>Visible</strong> y presiona <strong>Guardar</strong>.
+        ${ocultos ? `<br>${ocultos} producto(s) oculto(s) en la tienda.` : ''}
+      </div>
+      <div class="tabla-envoltura"><table class="tabla-precios">
+        <thead><tr>
+          <th>Producto</th>
+          <th>Costo neto<br><small>sin IVA</small></th>
+          <th>Margen<br><small>% sobre costo</small></th>
+          <th>Precio neto</th>
+          <th>IVA<br><small>19%</small></th>
+          <th>Precio final<br><small>con IVA</small></th>
+          <th>Ganancia<br><small>por unidad</small></th>
+          <th>Stock</th>
+          <th>Visible</th>
+          <th></th>
+        </tr></thead>
+        <tbody>${productos.map((p) => {
+          const cabecera = p.categoria !== categoriaActual
+            ? `<tr class="fila-categoria"><td colspan="10">${esc(p.categoria)}</td></tr>` : '';
+          categoriaActual = p.categoria;
+          return `${cabecera}
           <tr data-fila="${p.id}">
-            <td style="${p.activo ? '' : 'opacity:.6'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
-            <td>${esc(p.categoria)}</td>
-            <td><input type="number" min="3" step="10" value="${p.precio}" data-campo="precio" aria-label="Precio de ${esc(p.nombre)}" ${input}>
-              ${p.precio_anterior ? `<br><small><s>${clp(p.precio_anterior)}</s></small>` : ''}</td>
-            <td><input type="number" min="0" step="1" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}" ${input.replace('110px', '80px')}></td>
-            <td><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="${esc(p.nombre)} visible en la tienda"></td>
+            <td data-nombre style="${p.activo ? '' : 'opacity:.6'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
+            <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" value="${p.costo ?? ''}" data-campo="costo" placeholder="0" aria-label="Costo neto de ${esc(p.nombre)}"></div></td>
+            <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen ?? ''}" data-campo="margen" placeholder="0" aria-label="Margen de ${esc(p.nombre)}"><span>%</span></div></td>
+            <td data-calc="neto" class="calc">—</td>
+            <td data-calc="iva" class="calc">—</td>
+            <td><div class="campo-pesos campo-pesos--final"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${precioInicial(p)}" data-campo="precio" placeholder="0" aria-label="Precio final de ${esc(p.nombre)}"></div></td>
+            <td data-calc="ganancia" class="calc">—</td>
+            <td><input class="campo-stock" type="number" min="0" step="1" inputmode="numeric" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}"></td>
+            <td style="text-align:center"><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="${esc(p.nombre)} visible en la tienda"></td>
             <td style="white-space:nowrap">
               <button class="btn btn--azul btn--chico" data-guardar="${p.id}" disabled>Guardar</button>
               <button class="btn btn--claro btn--chico" data-editar="${p.id}">Editar</button>
             </td>
-          </tr>`).join('')}
+          </tr>`;
+        }).join('')}
         </tbody>
       </table></div>`;
+    contenido.querySelectorAll('[data-fila]').forEach((fila) => calcular(fila));
   }
 
-  // Edición rápida: habilita "Guardar" en la fila al cambiar precio, stock o visibilidad.
+  // ---------- Cálculo de precios ----------
+  const IVA = 0.19;
+  const aNumero = (input) => {
+    const v = String(input.value).replace(',', '.').trim();
+    return v === '' ? null : Number(v);
+  };
+  const redondear10 = (n) => Math.round(n / 10) * 10;
+
+  // origen: campo que cambió ('costo' | 'margen' | 'precio'), o nada para solo mostrar el desglose.
+  function calcular(fila, origen) {
+    const campo = (c) => fila.querySelector(`[data-campo="${c}"]`);
+    const costo = aNumero(campo('costo'));
+    const margen = aNumero(campo('margen'));
+
+    if ((origen === 'costo' || origen === 'margen') && costo > 0 && margen !== null) {
+      campo('precio').value = redondear10(costo * (1 + margen / 100) * (1 + IVA));
+    }
+    const precio = aNumero(campo('precio'));
+    if (origen === 'precio' && costo > 0 && precio > 0) {
+      campo('margen').value = ((precio / (1 + IVA) / costo - 1) * 100).toFixed(1);
+    }
+
+    const celda = (c) => fila.querySelector(`[data-calc="${c}"]`);
+    if (precio > 0) {
+      const neto = Math.round(precio / (1 + IVA));
+      celda('neto').textContent = clp(neto);
+      celda('iva').textContent = clp(precio - neto);
+      if (costo > 0) {
+        const ganancia = neto - costo;
+        celda('ganancia').textContent = clp(ganancia);
+        celda('ganancia').className = `calc ${ganancia < 0 ? 'calc--negativo' : 'calc--positivo'}`;
+      } else {
+        celda('ganancia').textContent = '—';
+        celda('ganancia').className = 'calc';
+      }
+    } else {
+      ['neto', 'iva', 'ganancia'].forEach((c) => { celda(c).textContent = '—'; celda(c).className = 'calc'; });
+    }
+  }
+
+  // Edición rápida: recalcula y habilita "Guardar" en la fila al cambiar cualquier campo.
   contenido.addEventListener('input', (e) => {
     const fila = e.target.closest('[data-fila]');
-    if (fila && e.target.dataset.campo) fila.querySelector('[data-guardar]').disabled = false;
+    const c = e.target.dataset.campo;
+    if (!fila || !c) return;
+    if (['costo', 'margen', 'precio'].includes(c)) calcular(fila, c);
+    fila.querySelector('[data-guardar]').disabled = false;
+  });
+
+  // Enter en cualquier campo de la fila = Guardar.
+  contenido.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || !e.target.dataset.campo) return;
+    const b = e.target.closest('[data-fila]')?.querySelector('[data-guardar]');
+    if (b && !b.disabled) { e.preventDefault(); b.click(); }
   });
 
   contenido.addEventListener('click', async (e) => {
@@ -175,7 +252,20 @@
     const fila = b.closest('[data-fila]');
     const p = productos.find((x) => x.id === Number(b.dataset.guardar));
     const valor = (c) => fila.querySelector(`[data-campo="${c}"]`);
-    const datos = { ...p, precio: valor('precio').value, stock: valor('stock').value, activo: valor('activo').checked };
+    const precio = aNumero(valor('precio'));
+    const datos = {
+      ...p,
+      costo: valor('costo').value,
+      margen: valor('margen').value,
+      precio: precio > 3 ? precio : p.precio, // sin precio real se mantiene el marcador (producto oculto)
+      stock: valor('stock').value || 0,
+      activo: valor('activo').checked,
+    };
+    if (datos.activo && !(precio > 3)) {
+      window.Tienda.toast('Escribe el precio (o el costo y el margen) antes de mostrar el producto');
+      valor(aNumero(valor('costo')) ? 'margen' : 'costo').focus();
+      return;
+    }
     if (datos.activo && Number(datos.precio) <= 3) {
       window.Tienda.toast('Escribe el precio real antes de mostrar el producto');
       valor('precio').focus();
@@ -187,7 +277,7 @@
       const guardado = await pedir('producto', { method: 'POST', body: datos });
       Object.assign(p, guardado);
       b.textContent = 'Guardado ✓';
-      fila.querySelector('td').style.opacity = p.activo ? '' : '.6';
+      fila.querySelector('[data-nombre]').style.opacity = p.activo ? '' : '.6';
       setTimeout(() => { b.textContent = 'Guardar'; }, 1500);
     } catch (err) {
       b.disabled = false;

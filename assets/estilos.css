@@ -338,3 +338,24 @@ dialog::backdrop { background: rgba(11, 37, 64, .45); }
 dialog form { padding: 24px; }
 .dialogo-acciones { display: flex; justify-content: end; gap: 10px; margin-top: 20px; }
 .login { max-width: 400px; margin: 80px auto; }
+
+/* Tabla de precios del admin */
+.tabla-precios th small { font-weight: 500; text-transform: none; letter-spacing: 0; }
+.tabla-precios td { vertical-align: middle; }
+.tabla-precios input[type="number"] {
+  padding: 7px 8px; border-radius: 8px; border: 1px solid var(--borde); background: var(--blanco); font-variant-numeric: tabular-nums;
+}
+.tabla-precios input[type="number"]:focus { outline: 2px solid var(--hielo-200); border-color: var(--azul-500); }
+.campo-pesos, .campo-pct { display: inline-flex; align-items: center; gap: 4px; }
+.campo-pesos span, .campo-pct span { color: var(--texto-suave); font-weight: 600; }
+.campo-pesos input { width: 96px; }
+.campo-pct input { width: 64px; }
+.campo-pesos--final input { width: 104px; font-weight: 700; border-color: var(--azul-500); background: var(--hielo-100); }
+.campo-stock { width: 70px; }
+.calc { color: var(--texto-suave); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.calc--positivo { color: var(--verde); font-weight: 700; }
+.calc--negativo { color: var(--rojo); font-weight: 700; }
+.fila-categoria td {
+  background: var(--azul-900); color: #fff; font-family: var(--fuente-titulos); text-transform: uppercase;
+  letter-spacing: .04em; font-size: .95rem; padding: 8px 14px;
+}
