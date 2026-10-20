@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Martan Congelados">
+  <polygon points="50,2 92,26 92,74 50,98 8,74 8,26" fill="#FFFFFF"/>
+  <polygon points="50,10.5 84.5,30.5 84.5,69.5 50,89.5 15.5,69.5 15.5,30.5" fill="none" stroke="#A9C6D6" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="25,27 34,22 50,42 66,22 75,27 75,70 66,70 66,40 50,59 34,40 34,70 25,70" fill="#12263A"/>
+  <path d="M50 73v12M44.8 76l10.4 6M44.8 82l10.4-6" stroke="#12263A" stroke-width="3" stroke-linecap="round"/>
+</svg>

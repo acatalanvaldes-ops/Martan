@@ -102,16 +102,20 @@
   }
 
   // ---------- Imágenes ----------
-  const COLORES = {
-    Empanadas: ['#f4a259', '#e07a2f'], Pizzas: ['#e76f51', '#c4452a'], Mariscos: ['#2a9d8f', '#1d7469'],
-    Carnes: ['#b5485d', '#8c2f42'], Verduras: ['#6a994e', '#4c7536'], Postres: ['#9d79bc', '#7651a0'],
-  };
-  const COPO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.6 10.4l3.4-.9-.9-3.4M20.4 13.6l-3.4.9.9 3.4M3.6 13.6l3.4.9-.9 3.4M20.4 10.4l-3.4-.9.9-3.4"/></svg>';
+  // Sin foto: hexágono y copo de la marca sobre tonos de Azul Martan (manual de identidad).
+  const TONOS = ['#12263A', '#1a3249', '#203b55', '#173048', '#1d3650', '#152c42'];
+  const HEXAGONO = '<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="50,4 90,27 90,73 50,96 10,73 10,27" stroke-width="3"/><path d="M50 34v32M36.1 42l27.8 16M36.1 58l27.8-16" stroke-width="4"/></svg>';
+
+  function tono(categoria) {
+    let h = 0;
+    for (const c of String(categoria)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return TONOS[h % TONOS.length];
+  }
 
   function imagen(p) {
     if (p.imagen_url) return `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`;
-    const [a, b] = COLORES[p.categoria] || ['#4f86c6', '#2f5f99'];
-    return `<div class="foto-ph" style="background:linear-gradient(135deg,${a},${b})" role="img" aria-label="${esc(p.nombre)}">${COPO}</div>`;
+    const t = tono(p.categoria);
+    return `<div class="foto-ph" style="background:radial-gradient(circle at 70% 20%,rgba(169,198,214,.18),transparent 60%),${t}" role="img" aria-label="${esc(p.nombre)}">${HEXAGONO}</div>`;
   }
 
   // ---------- Toast ----------
