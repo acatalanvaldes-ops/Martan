@@ -355,7 +355,18 @@ dialog form { padding: 24px; }
 .calc { color: var(--texto-suave); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .calc--positivo { color: var(--verde); font-weight: 700; }
 .calc--negativo { color: var(--rojo); font-weight: 700; }
+.foto-admin {
+  display: grid; place-items: center; width: 56px; height: 56px; padding: 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--borde); background: var(--hielo-100); cursor: pointer;
+}
+.foto-admin img { width: 100%; height: 100%; object-fit: cover; }
+.foto-admin:hover { border-color: var(--azul-500); }
+.foto-admin--vacia { border: 2px dashed var(--hielo); color: var(--azul-500); font-size: .75rem; font-weight: 700; }
+.foto-admin__quitar { display: block; margin-top: 4px; border: 0; background: none; padding: 0; font-size: .72rem; color: var(--texto-suave); text-decoration: underline; cursor: pointer; }
 .fila-categoria td {
   background: var(--azul-900); color: #fff; font-family: var(--fuente-titulos); text-transform: uppercase;
   letter-spacing: .04em; font-size: .95rem; padding: 8px 14px;
 }
+
+/* El panel de administración usa más ancho para la tabla de precios */
+.contenedor--admin { width: min(1480px, 100% - 32px); }

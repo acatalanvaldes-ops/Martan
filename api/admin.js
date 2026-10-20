@@ -5,7 +5,7 @@
 //   POST producto            { id?, ...campos } crea o actualiza
 import crypto from 'node:crypto';
 import { ruta, ErrorPublico, UUID, texto } from './_lib/http.js';
-import { sb } from './_lib/supabase.js';
+import { sb, subirArchivo } from './_lib/supabase.js';
 
 const ESTADOS = ['pendiente_pago', 'pagado', 'rechazado', 'en_preparacion', 'en_camino', 'listo_retiro', 'entregado', 'cancelado'];
 
@@ -106,6 +106,24 @@ export default ruta(['GET', 'POST'], async (req, res) => {
         }
         throw e;
       }
+    }
+    case 'POST foto': {
+      // { id, imagen: "data:image/jpeg;base64,…" } sube la foto; { id, imagen: null } la quita.
+      const id = entero(b.id, { min: 1 });
+      const [producto] = await sb(`productos?id=eq.${id}&select=id,slug`);
+      if (!producto) throw new ErrorPublico('Producto no encontrado.', 404);
+      let url = null;
+      if (b.imagen) {
+        const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.imagen));
+        if (!m) throw new ErrorPublico('El archivo debe ser una imagen JPG, PNG o WEBP.');
+        const contenido = Buffer.from(m[2], 'base64');
+        if (contenido.length > 3 * 1024 * 1024) throw new ErrorPublico('La imagen es demasiado grande (máximo 3 MB).');
+        const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[m[1]];
+        // Nombre con marca de tiempo: al cambiar la foto, el navegador no muestra la antigua desde caché.
+        url = await subirArchivo('productos', `${producto.slug}-${Date.now()}.${ext}`, contenido, m[1]);
+      }
+      const [p] = await sb(`productos?id=eq.${id}`, { method: 'PATCH', prefer: 'return=representation', body: { imagen_url: url } });
+      return res.json(p);
     }
     default:
       throw new ErrorPublico('Acción desconocida.', 404);

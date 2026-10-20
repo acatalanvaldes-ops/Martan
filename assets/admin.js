@@ -153,6 +153,7 @@
       </div>
       <div class="tabla-envoltura"><table class="tabla-precios">
         <thead><tr>
+          <th>Foto</th>
           <th>Producto</th>
           <th>Costo neto<br><small>sin IVA</small></th>
           <th>Margen<br><small>% sobre costo</small></th>
@@ -166,10 +167,11 @@
         </tr></thead>
         <tbody>${productos.map((p) => {
           const cabecera = p.categoria !== categoriaActual
-            ? `<tr class="fila-categoria"><td colspan="10">${esc(p.categoria)}</td></tr>` : '';
+            ? `<tr class="fila-categoria"><td colspan="11">${esc(p.categoria)}</td></tr>` : '';
           categoriaActual = p.categoria;
           return `${cabecera}
           <tr data-fila="${p.id}">
+            <td data-foto-celda="${p.id}">${celdaFoto(p)}</td>
             <td data-nombre style="${p.activo ? '' : 'opacity:.6'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
             <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" value="${p.costo ?? ''}" data-campo="costo" placeholder="0" aria-label="Costo neto de ${esc(p.nombre)}"></div></td>
             <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen ?? ''}" data-campo="margen" placeholder="0" aria-label="Margen de ${esc(p.nombre)}"><span>%</span></div></td>
@@ -189,6 +191,82 @@
       </table></div>`;
     contenido.querySelectorAll('[data-fila]').forEach((fila) => calcular(fila));
   }
+
+  // ---------- Fotos ----------
+  function celdaFoto(p) {
+    if (!p.imagen_url) {
+      return `<button type="button" class="foto-admin foto-admin--vacia" data-subir-foto="${p.id}" title="Subir foto de ${esc(p.nombre)}">+ Foto</button>`;
+    }
+    return `
+      <button type="button" class="foto-admin" data-subir-foto="${p.id}" title="Cambiar foto de ${esc(p.nombre)}">
+        <img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">
+      </button>
+      <button type="button" class="foto-admin__quitar" data-quitar-foto="${p.id}">Quitar</button>`;
+  }
+
+  const selectorFoto = document.createElement('input');
+  selectorFoto.type = 'file';
+  selectorFoto.accept = 'image/*'; // en el celular permite usar la cámara
+  selectorFoto.hidden = true;
+  document.body.appendChild(selectorFoto);
+  let fotoPara = null;
+
+  // Achica la foto en el navegador (máx. 800 px, JPEG): sube rápido aunque venga pesada del celular.
+  function prepararFoto(archivo) {
+    return new Promise((resolver, rechazar) => {
+      if (!archivo.type.startsWith('image/')) { rechazar(new Error('El archivo no es una imagen.')); return; }
+      const lector = new FileReader();
+      lector.onerror = () => rechazar(new Error('No se pudo leer el archivo.'));
+      lector.onload = () => {
+        const img = new Image();
+        img.onerror = () => rechazar(new Error('Formato de imagen no soportado. Usa JPG o PNG.'));
+        img.onload = () => {
+          const escala = Math.min(1, 800 / Math.max(img.width, img.height));
+          const lienzo = document.createElement('canvas');
+          lienzo.width = Math.round(img.width * escala);
+          lienzo.height = Math.round(img.height * escala);
+          const ctx = lienzo.getContext('2d');
+          ctx.fillStyle = '#fff'; // fondo blanco para PNG con transparencia
+          ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+          ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+          resolver(lienzo.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = lector.result;
+      };
+      lector.readAsDataURL(archivo);
+    });
+  }
+
+  async function guardarFoto(id, imagen) {
+    const p = productos.find((x) => x.id === id);
+    const celda = contenido.querySelector(`[data-foto-celda="${id}"]`);
+    celda.innerHTML = `<div class="foto-admin foto-admin--vacia">${imagen ? 'Subiendo…' : 'Quitando…'}</div>`;
+    try {
+      const guardado = await pedir('foto', { method: 'POST', body: { id, imagen } });
+      p.imagen_url = guardado.imagen_url;
+      window.Tienda.toast(imagen ? 'Foto guardada' : 'Foto quitada');
+    } catch (err) {
+      window.Tienda.toast(err.message);
+    }
+    celda.innerHTML = celdaFoto(p);
+  }
+
+  contenido.addEventListener('click', (e) => {
+    const subir = e.target.closest('[data-subir-foto]');
+    if (subir) { fotoPara = Number(subir.dataset.subirFoto); selectorFoto.value = ''; selectorFoto.click(); return; }
+    const quitar = e.target.closest('[data-quitar-foto]');
+    if (quitar && confirm('¿Quitar la foto de este producto?')) guardarFoto(Number(quitar.dataset.quitarFoto), null);
+  });
+
+  selectorFoto.addEventListener('change', async () => {
+    const archivo = selectorFoto.files[0];
+    if (!archivo || !fotoPara) return;
+    try {
+      guardarFoto(fotoPara, await prepararFoto(archivo));
+    } catch (err) {
+      window.Tienda.toast(err.message);
+    }
+  });
 
   // ---------- Cálculo de precios ----------
   const IVA = 0.19;
