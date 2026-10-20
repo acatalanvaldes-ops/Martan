@@ -63,8 +63,13 @@
         <div class="campo"><label>Precio anterior (oferta)<input name="precio_anterior" type="number" min="0" step="1"></label></div>
         <div class="campo"><label>Stock<input name="stock" type="number" min="0" step="1" required></label></div>
         <div class="campo"><label>Orden<input name="orden" type="number" step="1" value="0"></label></div>
-        <div class="campo campo--ancho"><label>URL de imagen (https://…)<input name="imagen_url" type="url" maxlength="500"></label></div>
-        <div class="campo campo--ancho"><label>Descripción<textarea name="descripcion" rows="3" maxlength="1000"></textarea></label></div>
+        <div class="campo campo--ancho"><label>Descripción<textarea name="descripcion" rows="3" maxlength="1000" placeholder="Qué es, qué lo hace especial…"></textarea></label></div>
+        <div class="campo campo--ancho"><p class="dialogo-seccion">Ficha del producto <small>Se muestra al pinchar la foto en la tienda. Los campos vacíos no aparecen.</small></p></div>
+        <div class="campo"><label>Temporada<input name="temporada" maxlength="120" list="lista-temporadas" placeholder="Todo el año"></label>
+          <datalist id="lista-temporadas"><option value="Todo el año"><option value="Primavera – verano"><option value="Otoño – invierno"><option value="Verano"><option value="Invierno"></datalist></div>
+        <div class="campo"><label>Conservación<input name="conservacion" maxlength="500" placeholder="Mantener congelado a −18 °C…"></label></div>
+        <div class="campo campo--ancho"><label>Preparación<textarea name="preparacion" rows="2" maxlength="1500" placeholder="Ej.: horno precalentado a 200 °C por 15 minutos, sin descongelar."></textarea></label></div>
+        <div class="campo campo--ancho"><label>Receta sugerida<textarea name="receta" rows="6" maxlength="4000" placeholder="Nombre de la receta&#10;&#10;Ingredientes:&#10;- …&#10;&#10;Preparación:&#10;1. …"></textarea></label></div>
         <label class="check"><input type="checkbox" name="activo"> Visible en la tienda</label>
         <label class="check"><input type="checkbox" name="destacado"> Destacado</label>
       </div>
@@ -72,6 +77,19 @@
       <div class="dialogo-acciones">
         <button class="btn btn--claro" value="cancelar" formnovalidate>Cancelar</button>
         <button class="btn btn--azul" value="guardar">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog data-dialogo-fotos>
+    <form method="dialog">
+      <h2 data-fotos-titulo>Fotos</h2>
+      <p class="dialogo-ayuda">La primera es la <strong>foto principal</strong>, la que aparece en la tarjeta. Puedes elegir varias a la vez (máximo 8 por producto).</p>
+      <div class="galeria-admin" data-galeria></div>
+      <div data-fotos-msg style="margin-top:12px"></div>
+      <div class="dialogo-acciones">
+        <button type="button" class="btn btn--azul" data-agregar-fotos>+ Agregar fotos</button>
+        <button class="btn btn--claro" value="cerrar">Listo</button>
       </div>
     </form>
   </dialog>

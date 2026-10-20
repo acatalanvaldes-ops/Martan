@@ -3,11 +3,16 @@
 //   POST estado              { id, estado }
 //   GET  productos           todos los productos (activos e inactivos)
 //   POST producto            { id?, ...campos } crea o actualiza
+//   POST eliminar            { id }
+//   POST foto                { id, imagen: dataURL }   agrega una foto a la galería
+//   POST foto-quitar         { id, url }               quita una foto de la galería
+//   POST foto-principal      { id, url }               la deja como foto principal
 import crypto from 'node:crypto';
 import { ruta, ErrorPublico, UUID, texto } from './_lib/http.js';
 import { sb, subirArchivo } from './_lib/supabase.js';
 
 const ESTADOS = ['pendiente_pago', 'pagado', 'rechazado', 'en_preparacion', 'en_camino', 'listo_retiro', 'entregado', 'cancelado'];
+const MAX_FOTOS = 8;
 
 function autorizado(req) {
   const clave = process.env.ADMIN_PASSWORD || '';
@@ -34,6 +39,11 @@ function porcentaje(v) {
   return Math.round(n * 100) / 100;
 }
 
+// Texto opcional: vacío se guarda como null.
+const opcional = (v, max) => texto(v, max) || null;
+
+const CAMPOS_FICHA = { temporada: 120, conservacion: 500, preparacion: 1500, receta: 4000 };
+
 function limpiarProducto(p) {
   const nombre = texto(p.nombre, 120);
   const categoria = texto(p.categoria, 60);
@@ -41,12 +51,15 @@ function limpiarProducto(p) {
   if (!categoria) throw new ErrorPublico('El producto necesita una categoría.');
   const imagen = texto(p.imagen_url, 500);
   if (imagen && !/^https:\/\//.test(imagen)) throw new ErrorPublico('La imagen debe ser una URL que empiece con https://');
-  // Costo y margen solo se tocan si vienen en la solicitud (el diálogo "Editar" no los envía).
-  const costos = {};
-  if ('costo' in p) costos.costo = entero(p.costo, { nulo: true });
-  if ('margen' in p) costos.margen = porcentaje(p.margen);
+  // Costo, margen y ficha solo se tocan si vienen en la solicitud.
+  const extra = {};
+  if ('costo' in p) extra.costo = entero(p.costo, { nulo: true });
+  if ('margen' in p) extra.margen = porcentaje(p.margen);
+  for (const [campo, max] of Object.entries(CAMPOS_FICHA)) {
+    if (campo in p) extra[campo] = opcional(p[campo], max);
+  }
   return {
-    ...costos,
+    ...extra,
     nombre,
     slug: slugDe(texto(p.slug, 80) || nombre),
     descripcion: texto(p.descripcion, 1000),
@@ -61,6 +74,35 @@ function limpiarProducto(p) {
     orden: entero(p.orden ?? 0, { min: -100000 }),
   };
 }
+
+// Traduce "columna inexistente" en un mensaje que diga qué script falta ejecutar.
+async function conColumnas(fn) {
+  try {
+    return await fn();
+  } catch (e) {
+    const m = String(e.message);
+    if (/PGRST204|42703|does not exist/.test(m)) {
+      if (/costo|margen/.test(m)) throw new ErrorPublico('Faltan las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
+      if (/imagenes|temporada|conservacion|preparacion|receta/.test(m)) {
+        throw new ErrorPublico('Faltan las columnas de la ficha: ejecuta supabase/fichas.sql en Supabase.', 409);
+      }
+    }
+    throw e;
+  }
+}
+
+const actualizar = (id, cambios) =>
+  conColumnas(() => sb(`productos?id=eq.${id}`, { method: 'PATCH', prefer: 'return=representation', body: cambios }))
+    .then(([p]) => p);
+
+async function galeriaDe(id) {
+  const [p] = await conColumnas(() => sb(`productos?id=eq.${id}&select=id,slug,imagen_url,imagenes`));
+  if (!p) throw new ErrorPublico('Producto no encontrado.', 404);
+  return { ...p, fotos: [p.imagen_url, ...(p.imagenes || [])].filter(Boolean) };
+}
+
+// La primera foto de la lista es la principal (imagen_url); el resto va en "imagenes".
+const guardarGaleria = (id, fotos) => actualizar(id, { imagen_url: fotos[0] || null, imagenes: fotos.slice(1) });
 
 export default ruta(['GET', 'POST'], async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -95,15 +137,12 @@ export default ruta(['GET', 'POST'], async (req, res) => {
       const datos = limpiarProducto(b);
       const id = b.id ? entero(b.id, { min: 1 }) : null;
       try {
-        const [p] = id
-          ? await sb(`productos?id=eq.${id}`, { method: 'PATCH', prefer: 'return=representation', body: datos })
-          : await sb('productos', { method: 'POST', prefer: 'return=representation', body: datos });
+        const [p] = await conColumnas(() => (id
+          ? sb(`productos?id=eq.${id}`, { method: 'PATCH', prefer: 'return=representation', body: datos })
+          : sb('productos', { method: 'POST', prefer: 'return=representation', body: datos })));
         return res.json(p);
       } catch (e) {
         if (String(e.message).includes('23505')) throw new ErrorPublico('Ya existe otro producto con ese nombre (slug repetido).', 409);
-        if (/PGRST204|column .*(costo|margen)/.test(String(e.message))) {
-          throw new ErrorPublico('Falta crear las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
-        }
         throw e;
       }
     }
@@ -117,22 +156,28 @@ export default ruta(['GET', 'POST'], async (req, res) => {
       return res.json({ ok: true, id });
     }
     case 'POST foto': {
-      // { id, imagen: "data:image/jpeg;base64,…" } sube la foto; { id, imagen: null } la quita.
       const id = entero(b.id, { min: 1 });
-      const [producto] = await sb(`productos?id=eq.${id}&select=id,slug`);
-      if (!producto) throw new ErrorPublico('Producto no encontrado.', 404);
-      let url = null;
-      if (b.imagen) {
-        const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.imagen));
-        if (!m) throw new ErrorPublico('El archivo debe ser una imagen JPG, PNG o WEBP.');
-        const contenido = Buffer.from(m[2], 'base64');
-        if (contenido.length > 3 * 1024 * 1024) throw new ErrorPublico('La imagen es demasiado grande (máximo 3 MB).');
-        const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[m[1]];
-        // Nombre con marca de tiempo: al cambiar la foto, el navegador no muestra la antigua desde caché.
-        url = await subirArchivo('productos', `${producto.slug}-${Date.now()}.${ext}`, contenido, m[1]);
-      }
-      const [p] = await sb(`productos?id=eq.${id}`, { method: 'PATCH', prefer: 'return=representation', body: { imagen_url: url } });
-      return res.json(p);
+      const g = await galeriaDe(id);
+      if (g.fotos.length >= MAX_FOTOS) throw new ErrorPublico(`Máximo ${MAX_FOTOS} fotos por producto.`);
+      const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.imagen || ''));
+      if (!m) throw new ErrorPublico('El archivo debe ser una imagen JPG, PNG o WEBP.');
+      const contenido = Buffer.from(m[2], 'base64');
+      if (contenido.length > 3 * 1024 * 1024) throw new ErrorPublico('La imagen es demasiado grande (máximo 3 MB).');
+      const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[m[1]];
+      // Nombre con marca de tiempo: cada foto es única y el navegador nunca muestra una antigua desde caché.
+      const url = await subirArchivo('productos', `${g.slug}-${Date.now()}.${ext}`, contenido, m[1]);
+      return res.json(await guardarGaleria(id, [...g.fotos, url]));
+    }
+    case 'POST foto-quitar': {
+      const id = entero(b.id, { min: 1 });
+      const g = await galeriaDe(id);
+      return res.json(await guardarGaleria(id, g.fotos.filter((f) => f !== b.url)));
+    }
+    case 'POST foto-principal': {
+      const id = entero(b.id, { min: 1 });
+      const g = await galeriaDe(id);
+      if (!g.fotos.includes(b.url)) throw new ErrorPublico('Esa foto no pertenece al producto.', 404);
+      return res.json(await guardarGaleria(id, [b.url, ...g.fotos.filter((f) => f !== b.url)]));
     }
     default:
       throw new ErrorPublico('Acción desconocida.', 404);

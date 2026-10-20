@@ -99,8 +99,8 @@
             <input type="search" placeholder="Buscar productos…" data-buscar>
           </label>
         </div>
-        <div class="grilla" data-grilla aria-live="polite">
-          <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
+        <div class="vitrina" data-grilla aria-live="polite">
+          <div class="carrusel__pista"><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div></div>
         </div>
       </div>
     </section>
@@ -145,6 +145,20 @@
       </div>
     </section>
   </main>
+
+  <!-- Ficha del producto: visualizador de fotos y características -->
+  <dialog class="ficha" data-ficha aria-labelledby="ficha-nombre">
+    <button class="cerrar ficha__cerrar" data-cerrar-ficha aria-label="Cerrar">×</button>
+    <div class="ficha__grid">
+      <div class="ficha__galeria">
+        <div class="ficha__visor" data-visor tabindex="0" aria-label="Fotos del producto"></div>
+        <button class="ficha__flecha ficha__flecha--prev" data-foto-paso="-1" aria-label="Foto anterior">‹</button>
+        <button class="ficha__flecha ficha__flecha--sig" data-foto-paso="1" aria-label="Foto siguiente">›</button>
+        <div class="ficha__miniaturas" data-miniaturas></div>
+      </div>
+      <div class="ficha__info" data-ficha-info></div>
+    </div>
+  </dialog>
 
   <footer class="pie">
     <div class="contenedor">

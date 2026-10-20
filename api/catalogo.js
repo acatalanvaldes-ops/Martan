@@ -2,9 +2,24 @@
 import { ruta } from './_lib/http.js';
 import { sb } from './_lib/supabase.js';
 
+const CAMPOS = 'id,slug,nombre,descripcion,categoria,formato,precio,precio_anterior,stock,imagen_url,destacado';
+const CAMPOS_FICHA = `${CAMPOS},imagenes,temporada,conservacion,preparacion,receta`;
+const orden = '&order=orden.asc,nombre.asc';
+
+// Si aún no se ejecutó supabase/fichas.sql, la tienda sigue funcionando sin las columnas de la ficha.
+async function productosActivos() {
+  try {
+    return await sb(`productos?activo=eq.true&select=${CAMPOS_FICHA}${orden}`);
+  } catch (e) {
+    if (!/PGRST204|42703|does not exist|column/i.test(String(e.message))) throw e;
+    console.warn('catalogo: faltan columnas de ficha, usando campos básicos');
+    return sb(`productos?activo=eq.true&select=${CAMPOS}${orden}`);
+  }
+}
+
 export default ruta(['GET'], async (req, res) => {
   const [productos, zonas, puntos, config] = await Promise.all([
-    sb('productos?activo=eq.true&select=id,slug,nombre,descripcion,categoria,formato,precio,precio_anterior,stock,imagen_url,destacado&order=orden.asc,nombre.asc'),
+    productosActivos(),
     sb('zonas_despacho?activo=eq.true&select=comuna,costo&order=comuna.asc'),
     sb('puntos_retiro?activo=eq.true&select=id,nombre,direccion,horario&order=id.asc'),
     sb('configuracion?id=eq.1&select=monto_minimo,despacho_gratis_desde,whatsapp,email_contacto'),

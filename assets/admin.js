@@ -229,23 +229,32 @@
   });
 
   // ---------- Fotos ----------
+  const MAX_FOTOS = 8;
+  const fotosDe = (p) => [p.imagen_url, ...(p.imagenes || [])].filter(Boolean);
+
   function celdaFoto(p) {
-    if (!p.imagen_url) {
-      return `<button type="button" class="foto-admin foto-admin--vacia" data-subir-foto="${p.id}" title="Subir foto de ${esc(p.nombre)}">+ Foto</button>`;
+    const fotos = fotosDe(p);
+    if (!fotos.length) {
+      return `<button type="button" class="foto-admin foto-admin--vacia" data-fotos="${p.id}" title="Subir fotos de ${esc(p.nombre)}">+ Fotos</button>`;
     }
     return `
-      <button type="button" class="foto-admin" data-subir-foto="${p.id}" title="Cambiar foto de ${esc(p.nombre)}">
-        <img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">
-      </button>
-      <button type="button" class="foto-admin__quitar" data-quitar-foto="${p.id}">Quitar</button>`;
+      <button type="button" class="foto-admin" data-fotos="${p.id}" title="Administrar fotos de ${esc(p.nombre)}">
+        <img src="${esc(fotos[0])}" alt="${esc(p.nombre)}" loading="lazy">
+        <span class="foto-admin__cuenta">${fotos.length}</span>
+      </button>`;
   }
 
   const selectorFoto = document.createElement('input');
   selectorFoto.type = 'file';
   selectorFoto.accept = 'image/*'; // en el celular permite usar la cámara
+  selectorFoto.multiple = true;
   selectorFoto.hidden = true;
   document.body.appendChild(selectorFoto);
-  let fotoPara = null;
+
+  const dialogoFotos = document.querySelector('[data-dialogo-fotos]');
+  const galeria = dialogoFotos.querySelector('[data-galeria]');
+  const fotosMsg = dialogoFotos.querySelector('[data-fotos-msg]');
+  let productoFotos = null;
 
   // Achica la foto en el navegador (máx. 800 px, JPEG): sube rápido aunque venga pesada del celular.
   function prepararFoto(archivo) {
@@ -273,34 +282,95 @@
     });
   }
 
-  async function guardarFoto(id, imagen) {
-    const p = productos.find((x) => x.id === id);
-    const celda = contenido.querySelector(`[data-foto-celda="${id}"]`);
-    celda.innerHTML = `<div class="foto-admin foto-admin--vacia">${imagen ? 'Subiendo…' : 'Quitando…'}</div>`;
-    try {
-      const guardado = await pedir('foto', { method: 'POST', body: { id, imagen } });
-      p.imagen_url = guardado.imagen_url;
-      window.Tienda.toast(imagen ? 'Foto guardada' : 'Foto quitada');
-    } catch (err) {
-      window.Tienda.toast(err.message);
-    }
-    celda.innerHTML = celdaFoto(p);
+  function avisoFotos(texto, tipo = 'error') {
+    fotosMsg.innerHTML = texto ? `<div class="aviso aviso--${tipo}">${texto}</div>` : '';
+  }
+
+  // Aplica la respuesta del servidor al producto, a la galería abierta y a la celda de la tabla.
+  function aplicarGaleria(p, guardado) {
+    p.imagen_url = guardado.imagen_url;
+    p.imagenes = guardado.imagenes || [];
+    renderGaleria();
+    const celda = contenido.querySelector(`[data-foto-celda="${p.id}"]`);
+    if (celda) celda.innerHTML = celdaFoto(p);
+  }
+
+  function renderGaleria() {
+    const p = productoFotos;
+    const fotos = fotosDe(p);
+    dialogoFotos.querySelector('[data-fotos-titulo]').textContent = `Fotos: ${p.nombre}`;
+    dialogoFotos.querySelector('[data-agregar-fotos]').disabled = fotos.length >= MAX_FOTOS;
+    galeria.innerHTML = fotos.length
+      ? fotos.map((f, i) => `
+        <figure class="galeria-admin__foto ${i === 0 ? 'es-principal' : ''}">
+          <img src="${esc(f)}" alt="Foto ${i + 1}">
+          ${i === 0 ? '<span class="galeria-admin__etiqueta">★ Principal</span>' : ''}
+          <figcaption>
+            ${i === 0 ? '' : `<button type="button" class="btn btn--claro btn--chico" data-principal="${esc(f)}">★ Principal</button>`}
+            <button type="button" class="btn btn--peligro btn--chico" data-quitar="${esc(f)}">Quitar</button>
+          </figcaption>
+        </figure>`).join('')
+      : '<div class="vacio" style="grid-column:1/-1;padding:24px">Este producto aún no tiene fotos.</div>';
+  }
+
+  function abrirFotos(id) {
+    productoFotos = productos.find((x) => x.id === id);
+    avisoFotos('');
+    renderGaleria();
+    dialogoFotos.showModal();
   }
 
   contenido.addEventListener('click', (e) => {
-    const subir = e.target.closest('[data-subir-foto]');
-    if (subir) { fotoPara = Number(subir.dataset.subirFoto); selectorFoto.value = ''; selectorFoto.click(); return; }
-    const quitar = e.target.closest('[data-quitar-foto]');
-    if (quitar && confirm('¿Quitar la foto de este producto?')) guardarFoto(Number(quitar.dataset.quitarFoto), null);
+    const b = e.target.closest('[data-fotos]');
+    if (b) abrirFotos(Number(b.dataset.fotos));
   });
 
+  dialogoFotos.querySelector('[data-agregar-fotos]').addEventListener('click', () => {
+    selectorFoto.value = '';
+    selectorFoto.click();
+  });
+
+  // Sube una o varias fotos, una a la vez, mostrando el avance.
   selectorFoto.addEventListener('change', async () => {
-    const archivo = selectorFoto.files[0];
-    if (!archivo || !fotoPara) return;
+    const p = productoFotos;
+    const libres = MAX_FOTOS - fotosDe(p).length;
+    const archivos = [...selectorFoto.files].slice(0, libres);
+    if (!archivos.length) return;
+    if (selectorFoto.files.length > libres) avisoFotos(`Solo se subirán ${libres} foto(s): el máximo es ${MAX_FOTOS} por producto.`, 'alerta');
+    const boton = dialogoFotos.querySelector('[data-agregar-fotos]');
+    boton.disabled = true;
+    let errores = 0;
+    for (const [i, archivo] of archivos.entries()) {
+      boton.textContent = `Subiendo ${i + 1} de ${archivos.length}…`;
+      try {
+        const guardado = await pedir('foto', { method: 'POST', body: { id: p.id, imagen: await prepararFoto(archivo) } });
+        aplicarGaleria(p, guardado);
+      } catch (err) {
+        errores++;
+        avisoFotos(`${esc(archivo.name)}: ${esc(err.message)}`);
+      }
+    }
+    boton.textContent = '+ Agregar fotos';
+    boton.disabled = fotosDe(p).length >= MAX_FOTOS;
+    if (!errores) window.Tienda.toast(archivos.length === 1 ? 'Foto guardada' : `${archivos.length} fotos guardadas`);
+  });
+
+  galeria.addEventListener('click', async (e) => {
+    const principal = e.target.closest('[data-principal]');
+    const quitar = e.target.closest('[data-quitar]');
+    if (!principal && !quitar) return;
+    if (quitar && !confirm('¿Quitar esta foto del producto?')) return;
+    const p = productoFotos;
+    (principal || quitar).disabled = true;
     try {
-      guardarFoto(fotoPara, await prepararFoto(archivo));
+      const guardado = principal
+        ? await pedir('foto-principal', { method: 'POST', body: { id: p.id, url: principal.dataset.principal } })
+        : await pedir('foto-quitar', { method: 'POST', body: { id: p.id, url: quitar.dataset.quitar } });
+      aplicarGaleria(p, guardado);
+      avisoFotos('');
     } catch (err) {
-      window.Tienda.toast(err.message);
+      avisoFotos(esc(err.message));
+      renderGaleria();
     }
   });
 
@@ -400,6 +470,8 @@
     }
   });
 
+  const CAMPOS_FICHA = ['temporada', 'conservacion', 'preparacion', 'receta'];
+
   function abrirProducto(p) {
     editando = p;
     formProducto.reset();
@@ -407,8 +479,9 @@
     document.querySelector('[data-dialogo-msg]').innerHTML = '';
     const f = formProducto.elements;
     const v = p || { activo: true, destacado: false, orden: 0, stock: 0 };
-    ['nombre', 'categoria', 'formato', 'precio', 'precio_anterior', 'stock', 'orden', 'imagen_url', 'descripcion']
+    ['nombre', 'categoria', 'formato', 'precio', 'precio_anterior', 'stock', 'orden', 'descripcion', ...CAMPOS_FICHA]
       .forEach((k) => { f[k].value = v[k] ?? ''; });
+    if (!p) f.conservacion.value = 'Mantener congelado a −18 °C. Una vez descongelado, no volver a congelar.';
     f.activo.checked = Boolean(v.activo);
     f.destacado.checked = Boolean(v.destacado);
     dialogo.showModal();
@@ -428,7 +501,9 @@
       id: editando?.id,
       nombre: f.nombre.value, categoria: f.categoria.value, formato: f.formato.value,
       precio: f.precio.value, precio_anterior: f.precio_anterior.value, stock: f.stock.value, orden: f.orden.value || 0,
-      imagen_url: f.imagen_url.value, descripcion: f.descripcion.value,
+      imagen_url: editando?.imagen_url ?? null, // las fotos se administran con el botón de la columna "Foto"
+      descripcion: f.descripcion.value,
+      ...Object.fromEntries(CAMPOS_FICHA.map((k) => [k, f[k].value])),
       activo: f.activo.checked, destacado: f.destacado.checked,
       slug: editando?.slug,
     };
