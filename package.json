@@ -1,0 +1,9 @@
+{
+  "name": "martan",
+  "private": true,
+  "description": "Martan · tienda online de congelados (sitio estático + funciones en api/ para Vercel)",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  }
+}

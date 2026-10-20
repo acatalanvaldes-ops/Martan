@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tu pedido · Martan</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b2540">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/assets/tienda.js" defer></script>
+  <script src="/assets/pedido.js" defer></script>
+</head>
+<body data-sin-carro>
+  <header class="cabecera">
+    <div class="contenedor cabecera__fila">
+      <a class="marca" href="/">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#0b2540"/><path d="M20 8v24M9.6 14l20.8 12M9.6 26l20.8-12" stroke="#7cc4f5" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="4" fill="#ff6b3d"/></svg>
+        <span>Martan<small>Congelados</small></span>
+      </a>
+    </div>
+  </header>
+
+  <main class="contenedor" style="max-width:720px;padding:32px 0 64px">
+    <section class="panel estado estado--info" data-estado>
+      <div class="estado__icono"><svg class="girando" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg></div>
+      <h1>Cargando tu pedido…</h1>
+    </section>
+    <section class="panel oculto" data-detalle></section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Martan · Congelados a domicilio</title>
+  <meta name="description" content="Empanadas, pizzas, mariscos, carnes y más, congelados y listos para preparar. Despacho a domicilio o retiro en local. Paga en línea con Mercado Pago.">
+  <meta name="theme-color" content="#0b2540">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/assets/tienda.js" defer></script>
+  <script src="/assets/inicio.js" defer></script>
+</head>
+<body>
+  <header class="cabecera">
+    <div class="contenedor cabecera__fila">
+      <a class="marca" href="/">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#0b2540"/><path d="M20 8v24M9.6 14l20.8 12M9.6 26l20.8-12" stroke="#7cc4f5" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="4" fill="#ff6b3d"/></svg>
+        <span>Martan<small>Congelados</small></span>
+      </a>
+      <nav class="cabecera__nav" aria-label="Principal">
+        <a href="#productos">Productos</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+      <button class="boton-carro" data-abrir-carro aria-label="Abrir carro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        <span class="boton-carro__txt">Carro</span>
+        <span class="boton-carro__n" data-contador>0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="portada">
+      <div class="contenedor portada__grid">
+        <div>
+          <span class="etiqueta-portada">❄️ Cadena de frío garantizada</span>
+          <h1>Congelados listos para tu mesa, directo a tu puerta</h1>
+          <p>Empanadas, pizzas, mariscos, carnes y postres de calidad. Compra en minutos, paga en línea y recibe en tu casa o retira en nuestro local.</p>
+          <div class="portada__acciones">
+            <a class="btn btn--primario" href="#productos">Ver productos</a>
+            <a class="btn btn--claro" href="#como-funciona">¿Cómo funciona?</a>
+          </div>
+        </div>
+        <svg class="portada__arte" viewBox="0 0 300 300" aria-hidden="true">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9f5ff"/><stop offset="1" stop-color="#b9dcf7"/></linearGradient>
+            <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a5f"/><stop offset="1" stop-color="#e5522a"/></linearGradient>
+          </defs>
+          <rect x="40" y="60" width="220" height="200" rx="28" fill="url(#g1)"/>
+          <rect x="40" y="60" width="220" height="56" rx="28" fill="#fff" opacity=".7"/>
+          <rect x="128" y="80" width="44" height="12" rx="6" fill="#9cc8ea"/>
+          <rect x="70" y="140" width="72" height="92" rx="14" fill="url(#g2)"/>
+          <rect x="158" y="140" width="72" height="44" rx="12" fill="#2a9d8f"/>
+          <rect x="158" y="192" width="72" height="40" rx="12" fill="#f4a259"/>
+          <g stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".95">
+            <path d="M232 22v56M207.8 36l48.4 28M207.8 64l48.4-28"/>
+          </g>
+          <g stroke="#cfe8fb" stroke-width="3" stroke-linecap="round">
+            <path d="M40 30v28M28 37l24 14M28 51l24-14"/>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="beneficios" aria-label="Beneficios">
+      <div class="contenedor beneficios__grid">
+        <div class="beneficio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <div><strong>Despacho a domicilio</strong><span data-texto-despacho>En camiones refrigerados</span></div>
+        </div>
+        <div class="beneficio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5M3 9h18v11H3zM9 20v-6h6v6"/></svg>
+          <div><strong>Retiro en local</strong><span>Sin costo de envío</span></div>
+        </div>
+        <div class="beneficio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+          <div><strong>Pago seguro</strong><span>Tarjetas vía Mercado Pago</span></div>
+        </div>
+        <div class="beneficio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7"/></svg>
+          <div><strong>Siempre congelado</strong><span>Cadena de frío de punta a punta</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="productos">
+      <div class="contenedor">
+        <div class="seccion__titulo">
+          <div>
+            <h2>Nuestros productos</h2>
+            <p>Elige tus favoritos y agrégalos al carro.</p>
+          </div>
+        </div>
+        <div class="filtros">
+          <div data-categorias style="display:contents"></div>
+          <label class="buscador">
+            <span class="sr">Buscar productos</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" placeholder="Buscar productos…" data-buscar>
+          </label>
+        </div>
+        <div class="grilla" data-grilla aria-live="polite">
+          <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="como-funciona" style="background:var(--blanco)">
+      <div class="contenedor">
+        <div class="seccion__titulo"><h2>Cómo funciona</h2></div>
+        <div class="pasos">
+          <div class="paso"><h3>Elige tus productos</h3><p>Agrega al carro lo que quieras. Verás el stock disponible en todo momento.</p></div>
+          <div class="paso"><h3>Despacho o retiro</h3><p>Indica tu comuna para el despacho o elige retirar en nuestro local.</p></div>
+          <div class="paso"><h3>Paga en línea</h3><p>Paga con tarjeta de crédito o débito de forma segura con Mercado Pago.</p></div>
+          <div class="paso"><h3>Recibe congelado</h3><p>Te avisamos por correo y llevamos tu pedido manteniendo la cadena de frío.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="preguntas">
+      <div class="contenedor">
+        <div class="seccion__titulo"><h2>Preguntas frecuentes</h2></div>
+        <div class="faq">
+          <details>
+            <summary>¿A qué comunas despachan?</summary>
+            <p data-comunas>Cargando comunas…</p>
+          </details>
+          <details>
+            <summary>¿Hay un monto mínimo de compra?</summary>
+            <p data-minimo>Cargando…</p>
+          </details>
+          <details>
+            <summary>¿Cómo llegan los productos?</summary>
+            <p>Despachamos en vehículos refrigerados y con embalaje térmico, para que los productos lleguen congelados. Al recibirlos, guárdalos de inmediato en el congelador a −18 °C.</p>
+          </details>
+          <details>
+            <summary>¿Qué medios de pago aceptan?</summary>
+            <p>Tarjetas de crédito, débito y prepago a través de Mercado Pago. Tu pedido se confirma apenas se aprueba el pago.</p>
+          </details>
+          <details>
+            <summary>¿Puedo devolver un producto?</summary>
+            <p>Por tratarse de alimentos perecibles no aplica el derecho a retracto, pero si un producto llega en mal estado te lo reponemos o devolvemos el dinero. Revisa los <a href="/terminos">términos y condiciones</a>.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <div class="pie__grid">
+        <div>
+          <a class="marca" href="/">
+            <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#12406e"/><path d="M20 8v24M9.6 14l20.8 12M9.6 26l20.8-12" stroke="#7cc4f5" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="4" fill="#ff6b3d"/></svg>
+            <span>Martan<small>Congelados</small></span>
+          </a>
+          <p>Congelados de calidad, despachados con cadena de frío.</p>
+        </div>
+        <div>
+          <h4>Tienda</h4>
+          <a href="/#productos">Productos</a>
+          <a href="/#como-funciona">Cómo funciona</a>
+          <a href="/#preguntas">Preguntas frecuentes</a>
+        </div>
+        <div>
+          <h4>Información</h4>
+          <a href="/terminos">Términos y condiciones</a>
+          <a href="/privacidad">Política de privacidad</a>
+          <a href="#" data-contacto-wsp class="oculto" target="_blank" rel="noopener">WhatsApp</a>
+          <a href="#" data-contacto-mail class="oculto"></a>
+        </div>
+      </div>
+      <div class="pie__legal">© <span data-anio></span> Martan. Todos los derechos reservados.</div>
+    </div>
+  </footer>
+</body>
+</html>

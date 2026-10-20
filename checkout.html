@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finalizar compra · Martan</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b2540">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/assets/tienda.js" defer></script>
+  <script src="/assets/checkout.js" defer></script>
+</head>
+<body data-sin-carro>
+  <header class="cabecera">
+    <div class="contenedor cabecera__fila">
+      <a class="marca" href="/">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#0b2540"/><path d="M20 8v24M9.6 14l20.8 12M9.6 26l20.8-12" stroke="#7cc4f5" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="4" fill="#ff6b3d"/></svg>
+        <span>Martan<small>Congelados</small></span>
+      </a>
+      <a class="btn btn--claro btn--chico" style="margin-left:auto" href="/#productos">← Seguir comprando</a>
+    </div>
+  </header>
+
+  <main class="contenedor">
+    <div class="pagina-titulo"><h1>Finalizar compra</h1></div>
+
+    <div class="vacio oculto" data-vacio>
+      <p>Tu carro está vacío.</p>
+      <a class="btn btn--primario" href="/#productos">Ver productos</a>
+    </div>
+
+    <form class="checkout" data-form novalidate>
+      <div>
+        <section class="panel">
+          <h2>1. Tus datos</h2>
+          <div class="campos">
+            <div class="campo campo--ancho">
+              <label for="nombre">Nombre y apellido</label>
+              <input id="nombre" name="nombre" autocomplete="name" required minlength="3" maxlength="120">
+            </div>
+            <div class="campo">
+              <label for="email">Correo electrónico</label>
+              <input id="email" name="email" type="email" autocomplete="email" required maxlength="160">
+              <small>Te enviaremos la confirmación del pago.</small>
+            </div>
+            <div class="campo">
+              <label for="telefono">Teléfono</label>
+              <input id="telefono" name="telefono" type="tel" autocomplete="tel" required placeholder="+56 9 1234 5678" maxlength="30">
+            </div>
+            <div class="campo">
+              <label for="rut">RUT <span style="font-weight:400;color:var(--texto-suave)">(opcional)</span></label>
+              <input id="rut" name="rut" maxlength="15" placeholder="12.345.678-9">
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>2. Entrega</h2>
+          <div class="opciones">
+            <label class="opcion" data-opcion-despacho>
+              <input type="radio" name="entrega" value="despacho" checked>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              <div><strong>Despacho</strong><span>A tu domicilio</span></div>
+            </label>
+            <label class="opcion" data-opcion-retiro>
+              <input type="radio" name="entrega" value="retiro">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5M3 9h18v11H3zM9 20v-6h6v6"/></svg>
+              <div><strong>Retiro</strong><span>Gratis en local</span></div>
+            </label>
+          </div>
+
+          <div class="campos" data-bloque-despacho>
+            <div class="campo">
+              <label for="comuna">Comuna</label>
+              <select id="comuna" name="comuna"><option value="">Selecciona…</option></select>
+            </div>
+            <div class="campo">
+              <label for="direccion">Dirección</label>
+              <input id="direccion" name="direccion" autocomplete="street-address" placeholder="Calle, número, depto." maxlength="200">
+            </div>
+            <div class="campo campo--ancho">
+              <label for="referencia">Referencia <span style="font-weight:400;color:var(--texto-suave)">(opcional)</span></label>
+              <input id="referencia" name="referencia" placeholder="Ej.: casa esquina, timbre malo, conserjería…" maxlength="200">
+            </div>
+          </div>
+
+          <div class="campos oculto" data-bloque-retiro>
+            <div class="campo campo--ancho">
+              <label for="punto">Punto de retiro</label>
+              <select id="punto" name="punto"></select>
+              <small data-punto-info></small>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>3. Comentarios</h2>
+          <div class="campo">
+            <label for="notas" class="sr">Comentarios</label>
+            <textarea id="notas" name="notas" rows="3" maxlength="500" placeholder="¿Algo que debamos saber sobre tu pedido o la entrega?"></textarea>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel resumen">
+        <h2>Resumen del pedido</h2>
+        <div data-resumen-items></div>
+        <hr>
+        <div class="resumen__item"><span>Subtotal</span><span data-subtotal>—</span></div>
+        <div class="resumen__item"><span>Entrega</span><span data-envio>—</span></div>
+        <hr>
+        <div class="fila-total"><span>Total</span><span data-total>—</span></div>
+        <div style="display:grid;gap:12px;margin-top:16px">
+          <div data-mensaje></div>
+          <label class="check">
+            <input type="checkbox" name="acepto" required>
+            <span>Acepto los <a href="/terminos" target="_blank">términos y condiciones</a> y entiendo que, por ser productos perecibles, no aplica el derecho a retracto.</span>
+          </label>
+          <button class="btn btn--primario btn--ancho" type="submit" data-pagar>Pagar con Mercado Pago</button>
+          <div class="mp-sello">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            Pago seguro. Serás redirigido a Mercado Pago.
+          </div>
+        </div>
+      </aside>
+    </form>
+  </main>
+</body>
+</html>

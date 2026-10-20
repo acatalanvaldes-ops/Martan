@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración · Martan</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0b2540">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/assets/tienda.js" defer></script>
+  <script src="/assets/admin.js" defer></script>
+</head>
+<body data-sin-carro>
+  <header class="cabecera">
+    <div class="contenedor cabecera__fila">
+      <a class="marca" href="/">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#0b2540"/><path d="M20 8v24M9.6 14l20.8 12M9.6 26l20.8-12" stroke="#7cc4f5" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="4" fill="#ff6b3d"/></svg>
+        <span>Martan<small>Administración</small></span>
+      </a>
+      <button class="btn btn--claro btn--chico oculto" style="margin-left:auto" data-salir>Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="contenedor">
+    <form class="panel login" data-login>
+      <h2>Ingresar al panel</h2>
+      <div class="campo">
+        <label for="clave">Clave de administración</label>
+        <input id="clave" name="clave" type="password" autocomplete="current-password" required>
+      </div>
+      <div data-login-msg style="margin-top:12px"></div>
+      <button class="btn btn--azul btn--ancho" style="margin-top:16px">Ingresar</button>
+    </form>
+
+    <div class="oculto" data-panel>
+      <div class="admin-barra">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-tab="pedidos">Pedidos</button>
+          <button role="tab" aria-selected="false" data-tab="productos">Productos</button>
+        </div>
+        <select data-filtro-estado style="padding:9px 12px;border-radius:999px;border:1px solid var(--borde)">
+          <option value="">Todos los estados</option>
+        </select>
+        <button class="btn btn--azul btn--chico oculto" data-nuevo>+ Nuevo producto</button>
+        <button class="btn btn--claro btn--chico" style="margin-left:auto" data-recargar>↻ Actualizar</button>
+      </div>
+      <div data-contenido></div>
+    </div>
+  </main>
+
+  <dialog data-dialogo>
+    <form method="dialog" data-form-producto>
+      <h2 data-dialogo-titulo>Producto</h2>
+      <div class="campos">
+        <div class="campo campo--ancho"><label>Nombre<input name="nombre" required maxlength="120"></label></div>
+        <div class="campo"><label>Categoría<input name="categoria" required maxlength="60" list="lista-categorias"></label><datalist id="lista-categorias"></datalist></div>
+        <div class="campo"><label>Formato<input name="formato" maxlength="80" placeholder="Bolsa 1 kg"></label></div>
+        <div class="campo"><label>Precio (CLP)<input name="precio" type="number" min="0" step="1" required></label></div>
+        <div class="campo"><label>Precio anterior (oferta)<input name="precio_anterior" type="number" min="0" step="1"></label></div>
+        <div class="campo"><label>Stock<input name="stock" type="number" min="0" step="1" required></label></div>
+        <div class="campo"><label>Orden<input name="orden" type="number" step="1" value="0"></label></div>
+        <div class="campo campo--ancho"><label>URL de imagen (https://…)<input name="imagen_url" type="url" maxlength="500"></label></div>
+        <div class="campo campo--ancho"><label>Descripción<textarea name="descripcion" rows="3" maxlength="1000"></textarea></label></div>
+        <label class="check"><input type="checkbox" name="activo"> Visible en la tienda</label>
+        <label class="check"><input type="checkbox" name="destacado"> Destacado</label>
+      </div>
+      <div data-dialogo-msg style="margin-top:12px"></div>
+      <div class="dialogo-acciones">
+        <button class="btn btn--claro" value="cancelar" formnovalidate>Cancelar</button>
+        <button class="btn btn--azul" value="guardar">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
