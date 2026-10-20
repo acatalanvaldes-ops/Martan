@@ -140,21 +140,61 @@
     document.getElementById('lista-categorias').innerHTML =
       [...new Set(productos.map((p) => p.categoria))].map((c) => `<option value="${esc(c)}">`).join('');
     if (!productos.length) { contenido.innerHTML = '<div class="vacio">Aún no hay productos.</div>'; return; }
+    const ocultos = productos.filter((p) => !p.activo).length;
+    const input = 'style="width:110px;padding:7px 9px;border-radius:8px;border:1px solid var(--borde)"';
     contenido.innerHTML = `
+      ${ocultos ? `<div class="aviso" style="margin-bottom:12px">${ocultos} producto(s) oculto(s). Escribe el precio y el stock, marca <strong>Visible</strong> y presiona <strong>Guardar</strong> en cada fila.</div>` : ''}
       <div class="tabla-envoltura"><table>
-        <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Visible</th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th>Categoría</th><th>Precio (CLP)</th><th>Stock</th><th>Visible</th><th></th></tr></thead>
         <tbody>${productos.map((p) => `
-          <tr style="${p.activo ? '' : 'opacity:.55'}">
-            <td><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
+          <tr data-fila="${p.id}">
+            <td style="${p.activo ? '' : 'opacity:.6'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
             <td>${esc(p.categoria)}</td>
-            <td>${clp(p.precio)}${p.precio_anterior ? `<br><small><s>${clp(p.precio_anterior)}</s></small>` : ''}</td>
-            <td><strong style="color:${p.stock === 0 ? 'var(--rojo)' : p.stock <= 5 ? 'var(--ambar)' : 'inherit'}">${p.stock}</strong></td>
-            <td>${p.activo ? 'Sí' : 'No'}</td>
-            <td><button class="btn btn--claro btn--chico" data-editar="${p.id}">Editar</button></td>
+            <td><input type="number" min="3" step="10" value="${p.precio}" data-campo="precio" aria-label="Precio de ${esc(p.nombre)}" ${input}>
+              ${p.precio_anterior ? `<br><small><s>${clp(p.precio_anterior)}</s></small>` : ''}</td>
+            <td><input type="number" min="0" step="1" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}" ${input.replace('110px', '80px')}></td>
+            <td><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="${esc(p.nombre)} visible en la tienda"></td>
+            <td style="white-space:nowrap">
+              <button class="btn btn--azul btn--chico" data-guardar="${p.id}" disabled>Guardar</button>
+              <button class="btn btn--claro btn--chico" data-editar="${p.id}">Editar</button>
+            </td>
           </tr>`).join('')}
         </tbody>
       </table></div>`;
   }
+
+  // Edición rápida: habilita "Guardar" en la fila al cambiar precio, stock o visibilidad.
+  contenido.addEventListener('input', (e) => {
+    const fila = e.target.closest('[data-fila]');
+    if (fila && e.target.dataset.campo) fila.querySelector('[data-guardar]').disabled = false;
+  });
+
+  contenido.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-guardar]');
+    if (!b) return;
+    const fila = b.closest('[data-fila]');
+    const p = productos.find((x) => x.id === Number(b.dataset.guardar));
+    const valor = (c) => fila.querySelector(`[data-campo="${c}"]`);
+    const datos = { ...p, precio: valor('precio').value, stock: valor('stock').value, activo: valor('activo').checked };
+    if (datos.activo && Number(datos.precio) <= 3) {
+      window.Tienda.toast('Escribe el precio real antes de mostrar el producto');
+      valor('precio').focus();
+      return;
+    }
+    b.disabled = true;
+    b.textContent = 'Guardando…';
+    try {
+      const guardado = await pedir('producto', { method: 'POST', body: datos });
+      Object.assign(p, guardado);
+      b.textContent = 'Guardado ✓';
+      fila.querySelector('td').style.opacity = p.activo ? '' : '.6';
+      setTimeout(() => { b.textContent = 'Guardar'; }, 1500);
+    } catch (err) {
+      b.disabled = false;
+      b.textContent = 'Guardar';
+      window.Tienda.toast(err.message);
+    }
+  });
 
   function abrirProducto(p) {
     editando = p;
