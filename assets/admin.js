@@ -184,6 +184,9 @@
             <td style="white-space:nowrap">
               <button class="btn btn--azul btn--chico" data-guardar="${p.id}" disabled>Guardar</button>
               <button class="btn btn--claro btn--chico" data-editar="${p.id}">Editar</button>
+              <button class="btn btn--peligro btn--chico" data-eliminar="${p.id}" title="Eliminar ${esc(p.nombre)}" aria-label="Eliminar ${esc(p.nombre)}">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
+              </button>
             </td>
           </tr>`;
         }).join('')}
@@ -191,6 +194,39 @@
       </table></div>`;
     contenido.querySelectorAll('[data-fila]').forEach((fila) => calcular(fila));
   }
+
+  // ---------- Eliminar ----------
+  contenido.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-eliminar]');
+    if (!b) return;
+    const id = Number(b.dataset.eliminar);
+    const p = productos.find((x) => x.id === id);
+    const nombre = `${p.nombre}${p.formato ? ` (${p.formato})` : ''}`;
+    const ok = confirm(
+      `¿Eliminar "${nombre}" definitivamente?\n\n` +
+      'Esta acción no se puede deshacer. Los pedidos antiguos conservan su detalle.\n\n' +
+      'Si solo quieres dejar de venderlo por un tiempo, cancela y desmarca "Visible".'
+    );
+    if (!ok) return;
+    b.disabled = true;
+    try {
+      await pedir('eliminar', { method: 'POST', body: { id } });
+      productos = productos.filter((x) => x.id !== id);
+      const fila = contenido.querySelector(`[data-fila="${id}"]`);
+      // Si era el último producto de su categoría, también se quita la franja de la categoría.
+      const anterior = fila.previousElementSibling;
+      const siguiente = fila.nextElementSibling;
+      fila.remove();
+      if (anterior?.classList.contains('fila-categoria') && (!siguiente || siguiente.classList.contains('fila-categoria'))) {
+        anterior.remove();
+      }
+      if (!productos.length) renderProductos();
+      window.Tienda.toast(`"${p.nombre}" eliminado`);
+    } catch (err) {
+      b.disabled = false;
+      window.Tienda.toast(err.message);
+    }
+  });
 
   // ---------- Fotos ----------
   function celdaFoto(p) {

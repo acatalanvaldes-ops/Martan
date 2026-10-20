@@ -61,6 +61,8 @@ h3 { font-weight: 700; }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 .btn--primario { background: var(--acento); color: #fff; box-shadow: 0 6px 16px rgba(18, 38, 58, .25); }
 .btn--primario:hover:not(:disabled) { background: var(--acento-oscuro); }
+.btn--peligro { background: var(--blanco); color: var(--rojo); border: 1px solid #f0c9c4; }
+.btn--peligro:hover:not(:disabled) { background: #fdecec; border-color: var(--rojo); }
 .btn--hielo { background: var(--hielo); color: var(--azul-900); }
 .btn--hielo:hover:not(:disabled) { background: #c3d8e3; }
 .btn--azul { background: var(--azul-700); color: #fff; }

@@ -107,6 +107,15 @@ export default ruta(['GET', 'POST'], async (req, res) => {
         throw e;
       }
     }
+    case 'POST eliminar': {
+      // Borra el producto. Los pedidos antiguos guardan nombre, formato y precio en pedido_items,
+      // así que solo se desvincula la referencia (producto_id = null) y el historial queda intacto.
+      const id = entero(b.id, { min: 1 });
+      await sb(`pedido_items?producto_id=eq.${id}`, { method: 'PATCH', body: { producto_id: null } });
+      const borrados = await sb(`productos?id=eq.${id}`, { method: 'DELETE', prefer: 'return=representation' });
+      if (!borrados.length) throw new ErrorPublico('Producto no encontrado.', 404);
+      return res.json({ ok: true, id });
+    }
     case 'POST foto': {
       // { id, imagen: "data:image/jpeg;base64,…" } sube la foto; { id, imagen: null } la quita.
       const id = entero(b.id, { min: 1 });
