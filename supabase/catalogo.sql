@@ -70,11 +70,26 @@ insert into productos (slug, nombre, categoria, formato, precio, stock, activo, 
   ('pulpa-lucuma',            'Pulpa de lúcuma',          'Pulpas de fruta',   'Bolsa 1 kg',             3, 0, false, 706),
   ('pulpa-melon-tuna',        'Pulpa de melón tuna',      'Pulpas de fruta',   'Bolsa 1 kg',             3, 0, false, 707),
   ('pulpa-mix-tropical',      'Pulpa mix tropical',       'Pulpas de fruta',   'Bolsa 1 kg',             3, 0, false, 708),
+  ('pulpa-maracuya',          'Pulpa de maracuyá con pepas', 'Pulpas de fruta', 'Bolsa 1 kg',           3, 0, false, 709),
   -- Lácteos
   ('queso-gauda-la-hacienda-500g', 'Queso gauda La Hacienda', 'Lácteos',       '500 g',        3, 0, false, 801)
 on conflict (slug) do update
   set nombre = excluded.nombre, categoria = excluded.categoria,
       formato = excluded.formato, orden = excluded.orden;
 -- (si se vuelve a ejecutar, NO toca precio, stock ni visibilidad ya cargados)
+
+-- 3) Fotos (archivos en assets/productos/). Solo se asignan si el producto aún no tiene foto,
+--    para no pisar una imagen cambiada después desde /admin.
+update productos p
+   set imagen_url = 'https://www.martan.cl/assets/productos/' || f.archivo
+  from (values
+    ('arandano',           'arandano.jpg'),
+    ('frambuesa',          'frambuesa.jpg'),
+    ('frutilla',           'frutilla.jpg'),
+    ('mora',               'mora.jpg'),
+    ('pulpa-maracuya',     'pulpa-maracuya.jpg'),
+    ('pulpa-mix-tropical', 'pulpa-mix-tropical.jpg')
+  ) as f(slug, archivo)
+ where p.slug = f.slug and p.imagen_url is null;
 
 select categoria, count(*) as productos from productos where orden > 100 group by categoria order by min(orden);
