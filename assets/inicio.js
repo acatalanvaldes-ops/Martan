@@ -67,6 +67,10 @@
   }
 
   function renderGrilla() {
+    if (!productos.length) {
+      grilla.innerHTML = '<div class="vacio" style="grid-column:1/-1"><h2 style="font-size:1.8rem">Estamos preparando nuestro catálogo</h2><p>Muy pronto podrás comprar aquí nuestros congelados.</p></div>';
+      return;
+    }
     const lista = filtrados();
     // Disponibles primero, agotados al final.
     lista.sort((a, b) => (b.stock > 0) - (a.stock > 0));
