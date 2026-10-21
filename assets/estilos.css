@@ -316,7 +316,7 @@ button.tarjeta__foto { display: block; width: 100%; padding: 0; border: 0; curso
 
 /* ---------- Pie ---------- */
 .pie { background: var(--azul-900); color: #c4d6e0; padding: 48px 0 28px; margin-top: 40px; }
-.pie__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px; }
+.pie__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
 .pie h4 { color: var(--hielo); margin: 0 0 12px; font-size: .78rem; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; }
 .pie a { color: #c4d6e0; text-decoration: none; display: block; padding: 3px 0; }
 .pie a:hover { color: #fff; }
@@ -488,3 +488,27 @@ dialog form { padding: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; 
 
 /* El panel de administración usa más ancho para la tabla de precios */
 .contenedor--admin { width: min(1480px, 100% - 32px); }
+
+/* Tipos de mensaje de contacto */
+.estado-pill.tipo-reclamo { background: #fdecec; color: #a12b2b; }
+.estado-pill.tipo-cotizacion { background: #e6f6ee; color: #146b44; }
+.estado-pill.tipo-factura { background: #fff4e5; color: #8a4b00; }
+
+/* ---------- Portada compacta (páginas interiores) ---------- */
+.portada--compacta .contenedor { padding: 56px 0 60px; }
+.portada--compacta p { max-width: 60ch; }
+
+/* ---------- Página de contacto ---------- */
+.contacto { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
+.contacto__lateral h3 { font-family: var(--fuente-titulos); font-weight: 400; text-transform: uppercase; font-size: 1.2rem; margin: 0 0 10px; }
+.contacto__lateral ul { margin: 0 0 18px; padding-left: 18px; color: #2d3b4b; }
+.contacto__lateral li { margin-bottom: 10px; }
+.contacto__canales a { display: block; font-weight: 600; padding: 4px 0; }
+.opcional { font-weight: 400; color: var(--texto-suave); }
+.campo input[aria-invalid="true"] { border-color: var(--rojo); }
+.trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.cabecera__nav a[aria-current="page"] { color: var(--azul-500); }
+@media (max-width: 860px) { .contacto { grid-template-columns: 1fr; } }
+
+/* Al saltar a una sección (#productos, #contacto…), que el título no quede bajo la cabecera fija */
+section[id] { scroll-margin-top: 84px; }

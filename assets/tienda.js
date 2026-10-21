@@ -232,6 +232,21 @@
 
   function montarPie() {
     document.querySelectorAll('[data-anio]').forEach((el) => { el.textContent = new Date().getFullYear(); });
+    // WhatsApp y correo de contacto del pie, desde la configuración de la tienda.
+    const wsp = document.querySelector('[data-contacto-wsp]');
+    const mail = document.querySelector('[data-contacto-mail]');
+    if (!wsp && !mail) return;
+    catalogo().then(({ config = {} }) => {
+      if (wsp && config.whatsapp) {
+        wsp.href = `https://wa.me/${encodeURIComponent(config.whatsapp)}`;
+        wsp.classList.remove('oculto');
+      }
+      if (mail && config.email_contacto) {
+        mail.href = `mailto:${config.email_contacto}`;
+        mail.textContent = config.email_contacto;
+        mail.classList.remove('oculto');
+      }
+    }).catch(() => {});
   }
 
   window.Tienda = { Carro, catalogo, api, clp, esc, imagen, toast, abrirCarro: () => {} };

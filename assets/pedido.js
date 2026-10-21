@@ -17,24 +17,20 @@
   };
 
   function textos(p) {
-    const retiro = p.entrega === 'retiro';
     switch (p.estado) {
       case 'pendiente_pago': return ['pendiente', 'Esperando confirmación del pago', 'Estamos esperando la confirmación de Mercado Pago. Esta página se actualiza sola.'];
       case 'rechazado': return ['error', 'El pago no se completó', 'Tu pago fue rechazado o cancelado. Tu carro sigue guardado: puedes intentarlo de nuevo con otro medio de pago.'];
       case 'cancelado': return ['error', 'Pedido cancelado', 'Este pedido fue cancelado. Si crees que es un error, contáctanos.'];
-      case 'pagado': return ['ok', `¡Gracias, ${p.cliente_nombre}! Pago confirmado`, retiro ? 'Te avisaremos por correo cuando tu pedido esté listo para retiro.' : 'Estamos preparando tu pedido. Te avisaremos cuando vaya en camino.'];
+      case 'pagado': return ['ok', `¡Gracias, ${p.cliente_nombre}! Pago confirmado`, 'Estamos preparando tu pedido. Te avisaremos cuando vaya en camino.'];
       case 'en_preparacion': return ['info', 'Estamos preparando tu pedido', 'Tu pago está confirmado y ya estamos armando tu pedido.'];
       case 'en_camino': return ['info', 'Tu pedido va en camino', 'Mantén espacio en el congelador: llegará pronto.'];
-      case 'listo_retiro': return ['ok', 'Tu pedido está listo para retiro', 'Puedes pasar a buscarlo en el horario del local.'];
       case 'entregado': return ['ok', 'Pedido entregado', '¡Que lo disfrutes! Gracias por comprar en Martan.'];
       default: return ['info', 'Estado del pedido', ''];
     }
   }
 
   function lineaTiempo(p) {
-    const pasos = p.entrega === 'retiro'
-      ? [['pagado', 'Pagado'], ['en_preparacion', 'Preparando'], ['listo_retiro', 'Listo para retiro'], ['entregado', 'Retirado']]
-      : [['pagado', 'Pagado'], ['en_preparacion', 'Preparando'], ['en_camino', 'En camino'], ['entregado', 'Entregado']];
+    const pasos = [['pagado', 'Pagado'], ['en_preparacion', 'Preparando'], ['en_camino', 'En camino'], ['entregado', 'Entregado']];
     const actual = pasos.findIndex(([e]) => e === p.estado);
     if (actual < 0) return '';
     return `<div class="linea-tiempo">${pasos.map(([, t], i) => `<div class="${i <= actual ? 'hecho' : ''}">${t}</div>`).join('')}</div>`;
@@ -54,17 +50,14 @@
         <a class="btn btn--claro" href="/">Volver a la tienda</a>
       </div>`;
 
-    const punto = p.puntos_retiro;
-    const entrega = p.entrega === 'retiro'
-      ? `Retiro en <strong>${esc(punto?.nombre)}</strong><br>${esc(punto?.direccion)}<br><span style="color:var(--texto-suave)">${esc(punto?.horario)}</span>`
-      : `Despacho a <strong>${esc(p.direccion)}</strong>, ${esc(p.comuna)}`;
+    const entrega = `Despacho a <strong>${esc(p.direccion)}</strong>, ${esc(p.comuna)}`;
     detalle.innerHTML = `
       <h2>Detalle</h2>
       ${p.pedido_items.map((i) => `
         <div class="resumen__item"><span>${i.cantidad} × ${esc(i.nombre)} <small>${esc(i.formato)}</small></span><span>${clp(i.subtotal)}</span></div>`).join('')}
       <hr style="border:0;border-top:1px solid var(--borde)">
       <div class="resumen__item"><span>Subtotal</span><span>${clp(p.subtotal)}</span></div>
-      <div class="resumen__item"><span>Entrega</span><span>${p.costo_despacho ? clp(p.costo_despacho) : 'Gratis'}</span></div>
+      <div class="resumen__item"><span>Despacho</span><span>${p.costo_despacho ? clp(p.costo_despacho) : 'Gratis'}</span></div>
       <div class="fila-total" style="margin-top:6px"><span>Total</span><span>${clp(p.total)}</span></div>
       <p style="margin:18px 0 0">${entrega}</p>`;
     detalle.classList.remove('oculto');

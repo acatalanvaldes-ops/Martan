@@ -32,8 +32,8 @@ export default ruta(['POST'], async (req, res) => {
   if (!EMAIL.test(cliente.email)) throw new ErrorPublico('Ingresa un correo válido.');
   if (cliente.telefono.replace(/\D/g, '').length < 8) throw new ErrorPublico('Ingresa un teléfono válido.');
 
+  // Martan solo trabaja con despacho a domicilio.
   const e = b.entrega || {};
-  if (!['despacho', 'retiro'].includes(e.tipo)) throw new ErrorPublico('Elige despacho o retiro.');
 
   // ---- Precios y stock desde la base de datos (nunca desde el navegador) ----
   const ids = [...cantidades.keys()];
@@ -67,24 +67,15 @@ export default ruta(['POST'], async (req, res) => {
     throw new ErrorPublico(`El monto mínimo de compra es ${clp(config.monto_minimo)}.`);
   }
 
-  // ---- Entrega ----
-  let entrega = {};
-  let costoDespacho = 0;
-  if (e.tipo === 'despacho') {
-    const comuna = texto(e.comuna, 80);
-    const direccion = texto(e.direccion, 200);
-    if (direccion.length < 5) throw new ErrorPublico('Ingresa la dirección de despacho.');
-    const [zona] = await sb(`zonas_despacho?activo=eq.true&comuna=eq.${encodeURIComponent(comuna)}&select=comuna,costo`);
-    if (!zona) throw new ErrorPublico('Aún no despachamos a esa comuna.');
-    const gratis = config.despacho_gratis_desde && subtotal >= config.despacho_gratis_desde;
-    costoDespacho = gratis ? 0 : zona.costo;
-    entrega = { comuna: zona.comuna, direccion, referencia: texto(e.referencia, 200) };
-  } else {
-    const puntoId = Number(e.puntoId);
-    const [punto] = Number.isInteger(puntoId) ? await sb(`puntos_retiro?activo=eq.true&id=eq.${puntoId}&select=id`) : [];
-    if (!punto) throw new ErrorPublico('Elige un punto de retiro válido.');
-    entrega = { punto_retiro_id: puntoId };
-  }
+  // ---- Despacho ----
+  const comuna = texto(e.comuna, 80);
+  const direccion = texto(e.direccion, 200);
+  if (direccion.length < 5) throw new ErrorPublico('Ingresa la dirección de despacho.');
+  const [zona] = await sb(`zonas_despacho?activo=eq.true&comuna=eq.${encodeURIComponent(comuna)}&select=comuna,costo`);
+  if (!zona) throw new ErrorPublico('Aún no despachamos a esa comuna.');
+  const gratis = config.despacho_gratis_desde && subtotal >= config.despacho_gratis_desde;
+  const costoDespacho = gratis ? 0 : zona.costo;
+  const entrega = { comuna: zona.comuna, direccion, referencia: texto(e.referencia, 200) };
   const total = subtotal + costoDespacho;
 
   // ---- Pedido ----
@@ -96,7 +87,7 @@ export default ruta(['POST'], async (req, res) => {
       cliente_email: cliente.email,
       cliente_telefono: cliente.telefono,
       cliente_rut: cliente.rut || null,
-      entrega: e.tipo,
+      entrega: 'despacho',
       ...entrega,
       notas: texto(b.notas, 500) || null,
       subtotal,

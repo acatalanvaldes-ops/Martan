@@ -8,7 +8,6 @@ import { procesarPago } from './_lib/mercadopago.js';
 const CAMPOS = [
   'numero', 'estado', 'creado_en', 'pagado_en', 'cliente_nombre', 'entrega', 'comuna', 'direccion',
   'subtotal', 'costo_despacho', 'total',
-  'puntos_retiro(nombre,direccion,horario)',
   'pedido_items(nombre,formato,cantidad,precio_unitario,subtotal)',
 ].join(',');
 

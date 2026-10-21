@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preguntas frecuentes y contacto · Martan</title>
+  <meta name="description" content="Resuelve tus dudas sobre despacho, pagos y productos de Martan Congelados, o escríbenos para sugerencias, reclamos, cotizaciones y solicitudes de factura.">
+  <meta name="theme-color" content="#12263A">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/assets/tienda.js" defer></script>
+  <script src="/assets/contacto.js" defer></script>
+</head>
+<body>
+  <header class="cabecera">
+    <div class="contenedor cabecera__fila">
+      <a class="marca" href="/">
+        <img class="marca__iso" src="/assets/isotipo.svg" alt="" width="42" height="42">
+        <span class="marca__txt"><b>MARTAN</b><small>CONGELADOS</small></span>
+      </a>
+      <nav class="cabecera__nav" aria-label="Principal">
+        <a href="/#productos">Productos</a>
+        <a href="/#como-funciona">Cómo funciona</a>
+        <a href="#preguntas">Preguntas frecuentes</a>
+        <a href="#contacto">Contáctenos</a>
+      </nav>
+      <button class="boton-carro" data-abrir-carro aria-label="Abrir carro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        <span class="boton-carro__txt">Carro</span>
+        <span class="boton-carro__n" data-contador>0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="portada portada--compacta">
+      <div class="contenedor">
+        <span class="etiqueta-portada">Ayuda</span>
+        <h1>¿En qué te podemos ayudar?</h1>
+        <p>Revisa las preguntas frecuentes o escríbenos: respondemos sugerencias, reclamos, cotizaciones y solicitudes de factura.</p>
+        <div class="portada__acciones">
+          <a class="btn btn--hielo" href="#preguntas">Preguntas frecuentes</a>
+          <a class="btn btn--claro" href="#contacto">Contáctenos</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="preguntas">
+      <div class="contenedor">
+        <div class="seccion__titulo"><h2>Preguntas frecuentes</h2></div>
+        <div class="faq">
+          <details>
+            <summary>¿A qué comunas despachan?</summary>
+            <p data-comunas>Cargando comunas…</p>
+          </details>
+          <details>
+            <summary>¿Cuánto cuesta el despacho?</summary>
+            <p data-costo-despacho>Cargando…</p>
+          </details>
+          <details>
+            <summary>¿Hay un monto mínimo de compra?</summary>
+            <p data-minimo>Cargando…</p>
+          </details>
+          <details>
+            <summary>¿Cómo llegan los productos?</summary>
+            <p>Despachamos en vehículos refrigerados y con embalaje térmico, para que los productos lleguen congelados. Al recibirlos, guárdalos de inmediato en el congelador a −18 °C.</p>
+          </details>
+          <details>
+            <summary>¿Qué medios de pago aceptan?</summary>
+            <p>Tarjetas de crédito, débito y prepago a través de Mercado Pago. Tu pedido se confirma apenas se aprueba el pago.</p>
+          </details>
+          <details>
+            <summary>¿Venden a negocios o por volumen?</summary>
+            <p>Sí. Tenemos formatos desde 200 g hasta 3 kg. Para compras por volumen, <a href="?tipo=cotizacion#contacto" data-elegir-tipo="cotizacion">pide una cotización</a> en el formulario de contacto.</p>
+          </details>
+          <details>
+            <summary>¿Puedo pedir factura?</summary>
+            <p>Sí. Usa el <a href="?tipo=factura#contacto" data-elegir-tipo="factura">formulario de contacto</a> eligiendo «Solicitud de factura», e indica tu número de pedido y la razón social, RUT y giro de tu empresa.</p>
+          </details>
+          <details>
+            <summary>¿Qué hago si un producto llega en mal estado?</summary>
+            <p>Escríbenos lo antes posible por el <a href="?tipo=reclamo#contacto" data-elegir-tipo="reclamo">formulario de contacto</a> eligiendo «Reclamo», con tu número de pedido. Te repondremos el producto o te devolveremos el dinero.</p>
+          </details>
+          <details>
+            <summary>¿Puedo devolver un producto?</summary>
+            <p>Por tratarse de alimentos perecibles no aplica el derecho a retracto, pero si un producto llega en mal estado te lo reponemos o devolvemos el dinero. Revisa los <a href="/terminos">términos y condiciones</a>.</p>
+          </details>
+          <details>
+            <summary>¿Cómo conservo los productos?</summary>
+            <p>Mantenlos congelados a −18 °C. Una vez descongelados, no los vuelvas a congelar. En la ficha de cada producto encontrarás cómo prepararlo y una receta sugerida.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="contacto" style="background:var(--blanco)">
+      <div class="contenedor">
+        <div class="seccion__titulo">
+          <div>
+            <h2>Contáctenos</h2>
+            <p>Completa el formulario y te responderemos al correo que indiques.</p>
+          </div>
+        </div>
+
+        <div class="contacto">
+          <form class="panel contacto__form" data-form-contacto novalidate>
+            <div class="campos">
+              <div class="campo campo--ancho">
+                <label for="tipo">Tipo de contacto</label>
+                <select id="tipo" name="tipo" required>
+                  <option value="">Selecciona…</option>
+                  <option value="sugerencia">Sugerencia</option>
+                  <option value="reclamo">Reclamo</option>
+                  <option value="cotizacion">Cotización</option>
+                  <option value="factura">Solicitud de factura</option>
+                </select>
+              </div>
+              <div class="campo campo--ancho">
+                <label for="c-nombre">Nombre y apellido</label>
+                <input id="c-nombre" name="nombre" autocomplete="name" required maxlength="120">
+              </div>
+              <div class="campo">
+                <label for="c-rut">RUT</label>
+                <input id="c-rut" name="rut" required maxlength="12" placeholder="12.345.678-9" inputmode="text" autocomplete="off">
+                <small data-rut-ayuda>Con dígito verificador.</small>
+              </div>
+              <div class="campo">
+                <label for="c-email">Correo electrónico</label>
+                <input id="c-email" name="email" type="email" autocomplete="email" required maxlength="160">
+              </div>
+              <div class="campo">
+                <label for="c-telefono">Teléfono <span class="opcional">(opcional)</span></label>
+                <input id="c-telefono" name="telefono" type="tel" autocomplete="tel" maxlength="30" placeholder="+56 9 1234 5678">
+              </div>
+              <div class="campo oculto" data-campo-pedido>
+                <label for="c-pedido">N° de pedido <span class="opcional">(si lo tienes)</span></label>
+                <input id="c-pedido" name="pedido" inputmode="numeric" maxlength="12" placeholder="Ej.: 1024">
+              </div>
+              <div class="campo campo--ancho">
+                <label for="c-mensaje">Mensaje</label>
+                <textarea id="c-mensaje" name="mensaje" rows="6" required maxlength="3000" placeholder="Cuéntanos en qué te podemos ayudar."></textarea>
+              </div>
+              <!-- Campo trampa contra bots: los humanos no lo ven -->
+              <div class="trampa" aria-hidden="true">
+                <label for="c-web">No completar</label>
+                <input id="c-web" name="web" tabindex="-1" autocomplete="off">
+              </div>
+            </div>
+            <div data-contacto-msg style="margin-top:14px"></div>
+            <button class="btn btn--primario btn--ancho" style="margin-top:16px" data-enviar>Enviar mensaje</button>
+          </form>
+
+          <aside class="panel contacto__lateral">
+            <h3>Antes de escribir</h3>
+            <ul>
+              <li><strong>Reclamos y facturas:</strong> ten a mano tu número de pedido. Aparece en la página de confirmación de tu compra.</li>
+              <li><strong>Facturas:</strong> indica en el mensaje la razón social, el RUT y el giro de la empresa.</li>
+              <li><strong>Cotizaciones:</strong> cuéntanos qué productos y qué cantidades necesitas.</li>
+            </ul>
+            <div class="contacto__canales" data-canales hidden>
+              <h3>Otros canales</h3>
+              <a href="#" data-canal-wsp class="oculto" target="_blank" rel="noopener">WhatsApp</a>
+              <a href="#" data-canal-mail class="oculto"></a>
+            </div>
+          </aside>
+        </div>
+
+        <div class="panel estado estado--ok oculto" data-contacto-ok>
+          <div class="estado__icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+          <h2 style="font-size:1.7rem">¡Gracias! Recibimos tu mensaje</h2>
+          <p>Te responderemos al correo <strong data-correo-ok></strong>.</p>
+          <a class="btn btn--claro" href="/">Volver a la tienda</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <div class="pie__grid">
+        <div>
+          <a class="marca marca--neg" href="/">
+            <img class="marca__iso" src="/assets/isotipo-negativo.svg" alt="" width="42" height="42">
+            <span class="marca__txt"><b>MARTAN</b><small>CONGELADOS</small></span>
+          </a>
+          <p>Productos congelados para hogares y negocios, despachados con cadena de frío.</p>
+        </div>
+        <div>
+          <h4>Tienda</h4>
+          <a href="/#productos">Productos</a>
+          <a href="/#como-funciona">Cómo funciona</a>
+        </div>
+        <div>
+          <h4>Ayuda</h4>
+          <a href="#preguntas">Preguntas frecuentes</a>
+          <a href="#contacto">Contáctenos</a>
+        </div>
+        <div>
+          <h4>Información</h4>
+          <a href="/terminos">Términos y condiciones</a>
+          <a href="/privacidad">Política de privacidad</a>
+          <a href="#" data-contacto-wsp class="oculto" target="_blank" rel="noopener">WhatsApp</a>
+          <a href="#" data-contacto-mail class="oculto"></a>
+        </div>
+      </div>
+      <div class="pie__legal">© <span data-anio></span> Comercial Martan SpA. Todos los derechos reservados.</div>
+    </div>
+  </footer>
+</body>
+</html>

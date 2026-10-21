@@ -295,30 +295,11 @@
     }, 80);
   });
 
-  // ---------- Información dinámica (FAQ, contacto) ----------
+  // ---------- Información dinámica ----------
   function renderInfo(datos) {
-    const { zonas = [], config = {} } = datos;
-    const comunas = document.querySelector('[data-comunas]');
-    comunas.textContent = zonas.length
-      ? `Despachamos a: ${zonas.map((z) => `${z.comuna} (${clp(z.costo)})`).join(', ')}.` +
-        (config.despacho_gratis_desde ? ` Despacho gratis en compras sobre ${clp(config.despacho_gratis_desde)}.` : '')
-      : 'Por ahora solo trabajamos con retiro en local.';
-    document.querySelector('[data-minimo]').textContent = config.monto_minimo
-      ? `Sí, el monto mínimo de compra es ${clp(config.monto_minimo)}.`
-      : 'No, puedes comprar desde un producto.';
+    const { config = {} } = datos;
     if (config.despacho_gratis_desde) {
       document.querySelector('[data-texto-despacho]').textContent = `Gratis sobre ${clp(config.despacho_gratis_desde)}`;
-    }
-    if (config.whatsapp) {
-      const a = document.querySelector('[data-contacto-wsp]');
-      a.href = `https://wa.me/${encodeURIComponent(config.whatsapp)}`;
-      a.classList.remove('oculto');
-    }
-    if (config.email_contacto) {
-      const a = document.querySelector('[data-contacto-mail]');
-      a.href = `mailto:${config.email_contacto}`;
-      a.textContent = config.email_contacto;
-      a.classList.remove('oculto');
     }
   }
 

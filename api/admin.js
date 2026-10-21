@@ -11,7 +11,8 @@ import crypto from 'node:crypto';
 import { ruta, ErrorPublico, UUID, texto } from './_lib/http.js';
 import { sb, subirArchivo } from './_lib/supabase.js';
 
-const ESTADOS = ['pendiente_pago', 'pagado', 'rechazado', 'en_preparacion', 'en_camino', 'listo_retiro', 'entregado', 'cancelado'];
+const ESTADOS = ['pendiente_pago', 'pagado', 'rechazado', 'en_preparacion', 'en_camino', 'entregado', 'cancelado'];
+const ESTADOS_MENSAJE = ['nuevo', 'en_proceso', 'cerrado'];
 const MAX_FOTOS = 8;
 
 function autorizado(req) {
@@ -118,7 +119,7 @@ export default ruta(['GET', 'POST'], async (req, res) => {
       const estado = String(req.query.estado || '');
       const filtro = ESTADOS.includes(estado) ? `&estado=eq.${estado}` : '';
       const pedidos = await sb(
-        `pedidos?select=*,puntos_retiro(nombre),pedido_items(nombre,formato,cantidad,precio_unitario,subtotal)&order=creado_en.desc&limit=200${filtro}`
+        `pedidos?select=*,pedido_items(nombre,formato,cantidad,precio_unitario,subtotal)&order=creado_en.desc&limit=200${filtro}`
       );
       return res.json(pedidos);
     }
@@ -178,6 +179,24 @@ export default ruta(['GET', 'POST'], async (req, res) => {
       const g = await galeriaDe(id);
       if (!g.fotos.includes(b.url)) throw new ErrorPublico('Esa foto no pertenece al producto.', 404);
       return res.json(await guardarGaleria(id, [b.url, ...g.fotos.filter((f) => f !== b.url)]));
+    }
+    case 'GET mensajes': {
+      const estado = String(req.query.estado || '');
+      const filtro = ESTADOS_MENSAJE.includes(estado) ? `&estado=eq.${estado}` : '';
+      try {
+        return res.json(await sb(`contactos?select=*&order=creado_en.desc&limit=300${filtro}`));
+      } catch (e) {
+        if (/PGRST205|42P01|contactos/.test(String(e.message))) {
+          throw new ErrorPublico('Falta crear la tabla de mensajes: ejecuta supabase/contactos.sql en Supabase.', 409);
+        }
+        throw e;
+      }
+    }
+    case 'POST mensaje-estado': {
+      const id = entero(b.id, { min: 1 });
+      if (!ESTADOS_MENSAJE.includes(b.estado)) throw new ErrorPublico('Estado inválido.');
+      const [m] = await sb(`contactos?id=eq.${id}`, { method: 'PATCH', prefer: 'return=representation', body: { estado: b.estado } });
+      return res.json(m);
     }
     default:
       throw new ErrorPublico('Acción desconocida.', 404);

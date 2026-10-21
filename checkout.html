@@ -59,19 +59,8 @@
         </section>
 
         <section class="panel">
-          <h2>2. Entrega</h2>
-          <div class="opciones">
-            <label class="opcion" data-opcion-despacho>
-              <input type="radio" name="entrega" value="despacho" checked>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-              <div><strong>Despacho</strong><span>A tu domicilio</span></div>
-            </label>
-            <label class="opcion" data-opcion-retiro>
-              <input type="radio" name="entrega" value="retiro">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5M3 9h18v11H3zM9 20v-6h6v6"/></svg>
-              <div><strong>Retiro</strong><span>Gratis en local</span></div>
-            </label>
-          </div>
+          <h2>2. Despacho a domicilio</h2>
+          <p class="aviso" style="margin:0 0 16px">Despachamos en vehículos refrigerados, manteniendo la cadena de frío hasta tu puerta.</p>
 
           <div class="campos" data-bloque-despacho>
             <div class="campo">
@@ -88,13 +77,6 @@
             </div>
           </div>
 
-          <div class="campos oculto" data-bloque-retiro>
-            <div class="campo campo--ancho">
-              <label for="punto">Punto de retiro</label>
-              <select id="punto" name="punto"></select>
-              <small data-punto-info></small>
-            </div>
-          </div>
         </section>
 
         <section class="panel">
@@ -111,7 +93,7 @@
         <div data-resumen-items></div>
         <hr>
         <div class="resumen__item"><span>Subtotal</span><span data-subtotal>—</span></div>
-        <div class="resumen__item"><span>Entrega</span><span data-envio>—</span></div>
+        <div class="resumen__item"><span>Despacho</span><span data-envio>—</span></div>
         <hr>
         <div class="fila-total"><span>Total</span><span data-total>—</span></div>
         <div style="display:grid;gap:12px;margin-top:16px">

@@ -5,7 +5,7 @@
 
   const ESTADOS = {
     pendiente_pago: 'Pendiente de pago', pagado: 'Pagado', rechazado: 'Rechazado', en_preparacion: 'En preparación',
-    en_camino: 'En camino', listo_retiro: 'Listo para retiro', entregado: 'Entregado', cancelado: 'Cancelado',
+    en_camino: 'En camino', entregado: 'Entregado', cancelado: 'Cancelado',
   };
   const CLAVE_SESION = 'martan_admin';
 
@@ -80,11 +80,57 @@
     if (tab === 'pedidos') {
       const qs = filtro.value ? `&estado=${filtro.value}` : '';
       renderPedidos(await pedir('pedidos', { qs }));
+    } else if (tab === 'mensajes') {
+      renderMensajes(await pedir('mensajes'));
     } else {
       productos = await pedir('productos');
       renderProductos();
     }
   }
+
+  // ---------- Mensajes del formulario de contacto ----------
+  const TIPOS_MENSAJE = { sugerencia: 'Sugerencia', reclamo: 'Reclamo', cotizacion: 'Cotización', factura: 'Solicitud de factura' };
+  const ESTADOS_MENSAJE = { nuevo: 'Nuevo', en_proceso: 'En proceso', cerrado: 'Cerrado' };
+
+  function renderMensajes(mensajes) {
+    if (!mensajes.length) { contenido.innerHTML = '<div class="vacio">Aún no hay mensajes.</div>'; return; }
+    const nuevos = mensajes.filter((m) => m.estado === 'nuevo').length;
+    contenido.innerHTML = `
+      <p style="color:var(--texto-suave);margin:0 0 12px">${mensajes.length} mensajes · <strong>${nuevos} nuevos</strong></p>
+      <div class="tabla-envoltura"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Contacto</th><th>Pedido</th><th>Mensaje</th><th>Estado</th></tr></thead>
+        <tbody>${mensajes.map((m) => {
+          const asunto = encodeURIComponent(`Martan · ${TIPOS_MENSAJE[m.tipo]}${m.pedido_numero ? ` · Pedido N° ${m.pedido_numero}` : ''}`);
+          return `
+          <tr style="${m.estado === 'cerrado' ? 'opacity:.6' : ''}">
+            <td style="white-space:nowrap">${fecha(m.creado_en)}</td>
+            <td><span class="estado-pill tipo-${m.tipo}">${TIPOS_MENSAJE[m.tipo] || esc(m.tipo)}</span></td>
+            <td><strong>${esc(m.nombre)}</strong><br>RUT ${esc(m.rut)}<br>
+              <a href="mailto:${esc(m.email)}?subject=${asunto}">${esc(m.email)}</a>${m.telefono ? `<br><a href="tel:${esc(m.telefono)}">${esc(m.telefono)}</a>` : ''}</td>
+            <td>${m.pedido_numero ? `N° ${m.pedido_numero}` : '—'}</td>
+            <td style="max-width:420px;white-space:pre-wrap">${esc(m.mensaje)}</td>
+            <td><select data-mensaje-estado="${m.id}" aria-label="Estado del mensaje">
+              ${Object.entries(ESTADOS_MENSAJE).map(([k, v]) => `<option value="${k}" ${k === m.estado ? 'selected' : ''}>${v}</option>`).join('')}
+            </select></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table></div>`;
+  }
+
+  contenido.addEventListener('change', async (e) => {
+    const sel = e.target.closest('[data-mensaje-estado]');
+    if (!sel) return;
+    sel.disabled = true;
+    try {
+      await pedir('mensaje-estado', { method: 'POST', body: { id: Number(sel.dataset.mensajeEstado), estado: sel.value } });
+      sel.closest('tr').style.opacity = sel.value === 'cerrado' ? '.6' : '';
+      window.Tienda.toast('Mensaje actualizado');
+    } catch (err) {
+      window.Tienda.toast(err.message);
+    }
+    sel.disabled = false;
+  });
 
   // ---------- Pedidos ----------
   function renderPedidos(pedidos) {
@@ -94,15 +140,13 @@
     contenido.innerHTML = `
       <p style="color:var(--texto-suave);margin:0 0 12px">${pedidos.length} pedidos mostrados · ${pagados.length} pagados · ventas ${clp(ventas)}</p>
       <div class="tabla-envoltura"><table>
-        <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Entrega</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Despacho</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
         <tbody>${pedidos.map((p) => `
           <tr>
             <td><strong>${p.numero}</strong></td>
             <td>${fecha(p.creado_en)}</td>
             <td>${esc(p.cliente_nombre)}<br><a href="mailto:${esc(p.cliente_email)}">${esc(p.cliente_email)}</a><br><a href="tel:${esc(p.cliente_telefono)}">${esc(p.cliente_telefono)}</a>${p.cliente_rut ? `<br>${esc(p.cliente_rut)}` : ''}</td>
-            <td>${p.entrega === 'despacho'
-              ? `Despacho · ${esc(p.comuna)}<br>${esc(p.direccion)}${p.referencia ? `<br><small>${esc(p.referencia)}</small>` : ''}`
-              : `Retiro · ${esc(p.puntos_retiro?.nombre || '')}`}
+            <td>${esc(p.comuna)}<br>${esc(p.direccion)}${p.referencia ? `<br><small>${esc(p.referencia)}</small>` : ''}
               ${p.notas ? `<br><small><strong>Nota:</strong> ${esc(p.notas)}</small>` : ''}</td>
             <td><ul class="detalle-items">${p.pedido_items.map((i) => `<li>${i.cantidad} × ${esc(i.nombre)}</li>`).join('')}</ul></td>
             <td><strong>${clp(p.total)}</strong>${p.costo_despacho ? `<br><small>envío ${clp(p.costo_despacho)}</small>` : ''}</td>
