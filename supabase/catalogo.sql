@@ -70,9 +70,7 @@ insert into productos (slug, nombre, categoria, formato, precio, stock, activo, 
   ('pulpa-lucuma',            'Pulpa de lúcuma',          'Pulpas de fruta',   'Bolsa 1 kg',             3, 0, false, 706),
   ('pulpa-melon-tuna',        'Pulpa de melón tuna',      'Pulpas de fruta',   'Bolsa 1 kg',             3, 0, false, 707),
   ('pulpa-mix-tropical',      'Pulpa mix tropical',       'Pulpas de fruta',   'Bolsa 1 kg',             3, 0, false, 708),
-  ('pulpa-maracuya',          'Pulpa de maracuyá con pepas', 'Pulpas de fruta', 'Bolsa 1 kg',           3, 0, false, 709),
-  -- Lácteos
-  ('queso-gauda-la-hacienda-500g', 'Queso gauda La Hacienda', 'Lácteos',       '500 g',        3, 0, false, 801)
+  ('pulpa-maracuya',          'Pulpa de maracuyá con pepas', 'Pulpas de fruta', 'Bolsa 1 kg',           3, 0, false, 709)
 on conflict (slug) do update
   set nombre = excluded.nombre, categoria = excluded.categoria,
       formato = excluded.formato, orden = excluded.orden;
