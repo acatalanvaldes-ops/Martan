@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node scripts/migrar.mjs && node scripts/publicar.mjs",
+  "outputDirectory": "public",
   "cleanUrls": true,
   "regions": ["gru1"],
   "headers": [
