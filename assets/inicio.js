@@ -190,8 +190,11 @@
     miniaturas.querySelectorAll('button').forEach((m, j) => m.setAttribute('aria-current', String(j === fotoActual)));
   }
 
-  function seccion(titulo, contenido) {
-    return contenido ? `<section class="ficha__seccion"><h3>${titulo}</h3>${parrafos(contenido)}</section>` : '';
+  function seccion(titulo, contenido, modificador = '') {
+    if (!contenido) return '';
+    const clase = modificador ? ` ficha__seccion--${modificador}` : '';
+    const marca = modificador ? ` data-${modificador}` : '';
+    return `<section class="ficha__seccion${clase}"${marca}><h3>${titulo}</h3>${parrafos(contenido)}</section>`;
   }
 
   function abrirFicha(id) {
@@ -218,6 +221,7 @@
       <h2 id="ficha-nombre" class="ficha__nombre">${esc(p.nombre)}</h2>
       ${p.formato ? `<p class="ficha__formato">${esc(p.formato)}</p>` : ''}
       <div class="ficha__insignias">${insignias(p)}</div>
+      ${p.receta ? '<button class="ficha__ir-receta" data-ir-receta>Ver receta sugerida ↓</button>' : ''}
       <div class="ficha__compra">
         <div class="precio precio--grande">${p.precio_anterior > p.precio ? `<s>${clp(p.precio_anterior)}</s>` : ''}${clp(p.precio)}</div>
         <div data-accion-de="${p.id}" data-clase="">${accion(p, '')}</div>
@@ -226,7 +230,7 @@
       <dl class="ficha__datos">${detalles.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       ${seccion('Conservación', p.conservacion)}
       ${seccion('Preparación', p.preparacion)}
-      ${seccion('Receta sugerida', p.receta)}
+      ${seccion('Receta sugerida', p.receta, 'receta')}
       <button class="btn btn--claro btn--chico ficha__compartir" data-compartir>Compartir producto</button>`;
 
     if (!ficha.open) ficha.showModal();
@@ -260,6 +264,10 @@
     if (paso) { irAFoto(fotoActual + Number(paso.dataset.fotoPaso)); return; }
     const mini = e.target.closest('[data-miniatura]');
     if (mini) { irAFoto(Number(mini.dataset.miniatura)); return; }
+    if (e.target.closest('[data-ir-receta]')) {
+      ficha.querySelector('[data-receta]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     if (e.target.closest('[data-compartir]')) {
       const datos = { title: `${ficha.dataset.nombre} · Martan Congelados`, url: location.href };
       try {
