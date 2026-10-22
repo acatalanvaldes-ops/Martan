@@ -102,9 +102,8 @@
   }
 
   // ---------- Imágenes ----------
-  // Sin foto: hexágono y copo de la marca sobre tonos de Azul Martan (manual de identidad).
-  const TONOS = ['#12263A', '#1a3249', '#203b55', '#173048', '#1d3650', '#152c42'];
-  const HEXAGONO = '<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="50,4 90,27 90,73 50,96 10,73 10,27" stroke-width="3"/><path d="M50 34v32M36.1 42l27.8 16M36.1 58l27.8-16" stroke-width="4"/></svg>';
+  // Sin foto: el pingüino de la marca en blanco, sobre tonos de Azul Profundo.
+  const TONOS = ['#033360', '#043a6c', '#05427a', '#023058', '#063d70', '#032b52'];
 
   function tono(categoria) {
     let h = 0;
@@ -115,7 +114,7 @@
   function imagen(p) {
     if (p.imagen_url) return `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`;
     const t = tono(p.categoria);
-    return `<div class="foto-ph" style="background:radial-gradient(circle at 70% 20%,rgba(169,198,214,.18),transparent 60%),${t}" role="img" aria-label="${esc(p.nombre)}">${HEXAGONO}</div>`;
+    return `<div class="foto-ph" style="background:radial-gradient(circle at 75% 15%,rgba(13,150,179,.35),transparent 60%),${t}" role="img" aria-label="${esc(p.nombre)}"><img src="/assets/isotipo-blanco.svg" alt=""></div>`;
   }
 
   // ---------- Toast ----------
