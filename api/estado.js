@@ -18,6 +18,7 @@ export default ruta(['GET'], async (req, res) => {
     mercadopago: Boolean(process.env.MP_ACCESS_TOKEN),
     mercadopago_modo: process.env.MP_ACCESS_TOKEN ? (modoPrueba() || (await cuentaMP()).usuario_prueba ? 'prueba' : 'produccion') : null,
     webhook_firma: Boolean(process.env.MP_WEBHOOK_SECRET),
+    correo: Boolean(process.env.RESEND_API_KEY),
     sitio: process.env.SITE_URL || null,
     admin: (process.env.ADMIN_PASSWORD || '').length >= 10,
   };
