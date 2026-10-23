@@ -4,6 +4,14 @@ import { sb, rpc } from './supabase.js';
 
 const MP = 'https://api.mercadopago.com';
 
+// Credenciales de prueba: el Access Token empieza con "TEST-". También se puede forzar con MP_MODO=prueba|produccion.
+export function modoPrueba() {
+  const forzado = (process.env.MP_MODO || '').toLowerCase();
+  if (forzado === 'prueba') return true;
+  if (forzado === 'produccion' || forzado === 'producción') return false;
+  return (process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-');
+}
+
 export async function mp(ruta, { method = 'GET', body, idempotencia } = {}) {
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) throw new ErrorPublico('Los pagos en línea aún no están configurados.', 503);

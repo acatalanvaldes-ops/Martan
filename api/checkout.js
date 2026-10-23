@@ -1,7 +1,7 @@
 // POST /api/checkout → valida el carro en el servidor, crea el pedido y la preferencia de Mercado Pago.
 import { ruta, ErrorPublico, urlBase, texto, clp } from './_lib/http.js';
 import { sb } from './_lib/supabase.js';
-import { mp } from './_lib/mercadopago.js';
+import { mp, modoPrueba } from './_lib/mercadopago.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -136,5 +136,7 @@ export default ruta(['POST'], async (req, res) => {
   }
 
   await sb(`pedidos?id=eq.${pedido.id}`, { method: 'PATCH', body: { mp_preferencia_id: preferencia.id } });
-  res.status(201).json({ pedidoId: pedido.id, numero: pedido.numero, urlPago: preferencia.init_point });
+  // Con credenciales de prueba se paga en el entorno de pruebas (sandbox); con las de producción, en el real.
+  const urlPago = modoPrueba() && preferencia.sandbox_init_point ? preferencia.sandbox_init_point : preferencia.init_point;
+  res.status(201).json({ pedidoId: pedido.id, numero: pedido.numero, urlPago });
 });
