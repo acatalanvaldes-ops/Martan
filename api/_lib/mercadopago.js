@@ -12,6 +12,21 @@ export function modoPrueba() {
   return (process.env.MP_ACCESS_TOKEN || '').startsWith('TEST-');
 }
 
+// Pregunta a Mercado Pago a qué cuenta pertenece el Access Token (sin exponer datos):
+// si es un usuario de prueba, los pagos deben hacerse en el entorno de pruebas.
+let cuentaCache = null;
+export async function cuentaMP() {
+  if (cuentaCache) return cuentaCache;
+  try {
+    const u = await mp('/users/me');
+    const etiquetas = u.tags || [];
+    cuentaCache = { usuario_prueba: etiquetas.includes('test_user'), pais: u.site_id || null, etiquetas };
+  } catch (e) {
+    cuentaCache = { error: String(e.message).slice(0, 120) };
+  }
+  return cuentaCache;
+}
+
 export async function mp(ruta, { method = 'GET', body, idempotencia } = {}) {
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) throw new ErrorPublico('Los pagos en línea aún no están configurados.', 503);
