@@ -12,7 +12,7 @@ export async function enviarCorreo({ para, asunto, html, texto, responderA }) {
     method: 'POST',
     headers: { Authorization: `Bearer ${clave}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM || 'Martan Congelados <pedidos@martan.cl>',
+      from: process.env.MAIL_FROM || 'Martan Congelados <administracion@martan.cl>',
       to: [para],
       subject: asunto,
       html,
@@ -92,7 +92,7 @@ export async function notificarEstado(pedidoId) {
     const texto = `${titulo}\n\nHola ${(p.cliente_nombre || '').split(' ')[0]}, ${mensaje}\n\n` +
       (p.pedido_items || []).map((i) => `${i.cantidad} × ${i.nombre} — ${clp(i.subtotal)}`).join('\n') +
       `\nDespacho: ${p.costo_despacho ? clp(p.costo_despacho) : 'Gratis'}\nTotal: ${clp(p.total)}\n\nVer tu pedido: ${enlace}\n\nMartan Congelados · www.martan.cl`;
-    return await enviarCorreo({ para: p.cliente_email, asunto, html: plantilla(p, titulo, mensaje, enlace), texto, responderA: conf?.email_contacto || process.env.MAIL_REPLY_TO });
+    return await enviarCorreo({ para: p.cliente_email, asunto, html: plantilla(p, titulo, mensaje, enlace), texto, responderA: process.env.MAIL_REPLY_TO || conf?.email_contacto || 'administracion@martan.cl' });
   } catch (e) {
     console.error('notificarEstado', e);
     return { enviado: false, motivo: 'error', detalle: String(e.message).slice(0, 200) };
