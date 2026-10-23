@@ -10,6 +10,7 @@
 import crypto from 'node:crypto';
 import { ruta, ErrorPublico, UUID, texto } from './_lib/http.js';
 import { sb, subirArchivo } from './_lib/supabase.js';
+import { notificarEstado } from './_lib/correo.js';
 
 const ESTADOS = ['pendiente_pago', 'pagado', 'rechazado', 'en_preparacion', 'en_camino', 'entregado', 'cancelado'];
 const ESTADOS_MENSAJE = ['nuevo', 'en_proceso', 'cerrado'];
@@ -56,6 +57,11 @@ function limpiarProducto(p) {
   const extra = {};
   if ('costo' in p) extra.costo = entero(p.costo, { nulo: true });
   if ('margen' in p) extra.margen = porcentaje(p.margen);
+  // Venta por unidad: unidades que trae la caja, formato y precio al detalle (con su margen).
+  if ('unidades_por_caja' in p) extra.unidades_por_caja = Math.max(1, entero(p.unidades_por_caja ?? 1, { min: 1 }));
+  if ('formato_unidad' in p) extra.formato_unidad = opcional(p.formato_unidad, 80);
+  if ('precio_unidad' in p) extra.precio_unidad = entero(p.precio_unidad, { nulo: true });
+  if ('margen_unidad' in p) extra.margen_unidad = porcentaje(p.margen_unidad);
   for (const [campo, max] of Object.entries(CAMPOS_FICHA)) {
     if (campo in p) extra[campo] = opcional(p[campo], max);
   }
@@ -84,6 +90,9 @@ async function conColumnas(fn) {
     const m = String(e.message);
     if (/PGRST204|42703|does not exist/.test(m)) {
       if (/costo|margen/.test(m)) throw new ErrorPublico('Faltan las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
+      if (/unidades_por_caja|precio_unidad|formato_unidad|margen_unidad|modo|unidades/.test(m)) {
+        throw new ErrorPublico('Falta aplicar la migración de venta por caja/unidad (se aplica sola en el próximo deploy).', 409);
+      }
       if (/imagenes|temporada|conservacion|preparacion|receta/.test(m)) {
         throw new ErrorPublico('Faltan las columnas de la ficha: ejecuta supabase/fichas.sql en Supabase.', 409);
       }
@@ -119,18 +128,22 @@ export default ruta(['GET', 'POST'], async (req, res) => {
       const estado = String(req.query.estado || '');
       const filtro = ESTADOS.includes(estado) ? `&estado=eq.${estado}` : '';
       const pedidos = await sb(
-        `pedidos?select=*,pedido_items(nombre,formato,cantidad,precio_unitario,subtotal)&order=creado_en.desc&limit=200${filtro}`
+        `pedidos?select=*,pedido_items(nombre,formato,modo,cantidad,precio_unitario,subtotal)&order=creado_en.desc&limit=200${filtro}`
       );
       return res.json(pedidos);
     }
     case 'POST estado': {
       if (!UUID.test(String(b.id)) || !ESTADOS.includes(b.estado)) throw new ErrorPublico('Datos inválidos.');
+      const [antes] = await sb(`pedidos?id=eq.${b.id}&select=estado`);
+      if (!antes) throw new ErrorPublico('Pedido no encontrado.', 404);
       const [p] = await sb(`pedidos?id=eq.${b.id}`, {
         method: 'PATCH',
         prefer: 'return=representation',
         body: { estado: b.estado, actualizado_en: new Date().toISOString() },
       });
-      return res.json(p);
+      // Cada cambio real de estado se avisa al cliente por correo.
+      const correo = antes.estado !== b.estado ? await notificarEstado(b.id) : { enviado: false, motivo: 'sin_cambio' };
+      return res.json({ ...p, correo });
     }
     case 'GET productos':
       return res.json(await sb('productos?select=*&order=orden.asc,nombre.asc'));

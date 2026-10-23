@@ -1,6 +1,7 @@
 // Cliente mínimo de la API de Mercado Pago y lógica de confirmación de pagos.
 import { ErrorPublico, UUID } from './http.js';
 import { sb, rpc } from './supabase.js';
+import { notificarEstado } from './correo.js';
 
 const MP = 'https://api.mercadopago.com';
 
@@ -58,12 +59,19 @@ export async function procesarPago(pagoId) {
       p_pago: String(pago.id),
       p_monto: Math.round(pago.transaction_amount),
     });
+    // 'ok' solo ocurre la primera vez: el correo de pago confirmado no se duplica.
+    if (resultado === 'ok') await notificarEstado(pedidoId);
     return { resultado, pedidoId };
   }
 
   const cambios = { mp_pago_id: String(pago.id), mp_estado: pago.status, actualizado_en: new Date().toISOString() };
-  if (ESTADOS_FALLIDOS.includes(pago.status)) cambios.estado = 'rechazado';
-  // Solo toca pedidos que aún no están pagados.
-  await sb(`pedidos?id=eq.${pedidoId}&estado=in.(pendiente_pago,rechazado)`, { method: 'PATCH', body: cambios });
+  const fallido = ESTADOS_FALLIDOS.includes(pago.status);
+  if (fallido) cambios.estado = 'rechazado';
+  // Solo toca pedidos que aún no están pagados. Si pasa de pendiente a rechazado, se avisa al cliente una vez.
+  const pasaARechazado = fallido
+    ? await sb(`pedidos?id=eq.${pedidoId}&estado=eq.pendiente_pago`, { method: 'PATCH', prefer: 'return=representation', body: cambios })
+    : [];
+  if (pasaARechazado.length) await notificarEstado(pedidoId);
+  else await sb(`pedidos?id=eq.${pedidoId}&estado=in.(pendiente_pago,rechazado)`, { method: 'PATCH', body: cambios });
   return { resultado: pago.status, pedidoId };
 }

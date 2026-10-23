@@ -33,7 +33,7 @@
     document.querySelector('[data-resumen-items]').innerHTML = items.map((i) => `
       <div class="linea" style="grid-template-columns:48px 1fr auto">
         <div class="linea__foto" style="width:48px;height:48px">${imagen(i)}</div>
-        <div><p class="linea__nombre">${esc(i.nombre)}</p><div class="linea__formato">${i.cantidad} × ${clp(i.precio)}</div></div>
+        <div><p class="linea__nombre">${esc(i.nombre)}</p><div class="linea__formato">${esc(i.formato)}<br>${i.cantidad} × ${clp(i.precio)}</div></div>
         <strong>${clp(i.precio * i.cantidad)}</strong>
       </div>`).join('');
 
@@ -101,7 +101,7 @@
       const r = await api('/api/checkout', {
         method: 'POST',
         body: {
-          items: Carro.items().map((i) => ({ id: i.id, cantidad: i.cantidad })),
+          items: Carro.items().map((i) => ({ id: i.id, modo: i.modo, cantidad: i.cantidad })),
           cliente: { nombre: f.nombre.value, email: f.email.value, telefono: f.telefono.value, rut: f.rut.value },
           entrega: { tipo: 'despacho', comuna: selComuna.value, direccion: f.direccion.value, referencia: f.referencia.value },
           notas: f.notas.value,
@@ -114,10 +114,15 @@
       botonPagar.textContent = 'Pagar con Mercado Pago';
       if (err.status === 409 && err.datos?.sinStock) {
         // Ajusta el carro al stock real y explica qué cambió.
+        // El servidor informa las UNIDADES disponibles: se actualiza el stock de cada línea y se ajustan las cantidades.
         const detalle = err.datos.sinStock.map((s) => {
-          const linea = Carro.items().find((i) => i.id === s.id);
-          if (s.disponible > 0) Carro.fijar(s.id, s.disponible); else Carro.quitar(s.id);
-          return `<li>${esc(s.nombre || linea?.nombre || 'Producto')}: ${s.disponible > 0 ? `quedan ${s.disponible}` : 'agotado'}</li>`;
+          const lineas = Carro.items().filter((i) => i.id === s.id);
+          lineas.forEach((l) => { l.stock = s.disponible; });
+          lineas.forEach((l) => Carro.fijar(l.id, l.cantidad, l.modo));
+          const nombre = s.nombre || lineas[0]?.nombre || 'Producto';
+          const queda = s.disponible <= 0 ? 'agotado'
+            : s.unidades_por_caja > 1 ? `quedan ${s.disponible} unidades (${s.cajas} caja${s.cajas === 1 ? '' : 's'})` : `quedan ${s.disponible}`;
+          return `<li>${esc(nombre)}: ${queda}</li>`;
         }).join('');
         avisar(`Actualizamos tu carro porque cambió el stock:<ul style="margin:6px 0 0;padding-left:18px">${detalle}</ul>Revisa el resumen y vuelve a intentar.`);
       } else {

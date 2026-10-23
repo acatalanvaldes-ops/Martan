@@ -3,7 +3,7 @@ import { ruta } from './_lib/http.js';
 import { sb } from './_lib/supabase.js';
 
 const CAMPOS = 'id,slug,nombre,descripcion,categoria,formato,precio,precio_anterior,stock,imagen_url,destacado';
-const CAMPOS_FICHA = `${CAMPOS},imagenes,temporada,conservacion,preparacion,receta`;
+const CAMPOS_FICHA = `${CAMPOS},imagenes,temporada,conservacion,preparacion,receta,unidades_por_caja,precio_unidad,formato_unidad`;
 const orden = '&order=orden.asc,nombre.asc';
 
 // Si aún no se ejecutó supabase/fichas.sql, la tienda sigue funcionando sin las columnas de la ficha.

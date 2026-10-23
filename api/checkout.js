@@ -8,16 +8,18 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export default ruta(['POST'], async (req, res) => {
   const b = req.body || {};
 
-  // ---- Carro: se agrupan cantidades por producto ----
+  // ---- Carro: cada línea es un producto vendido por caja o por unidad ----
   if (!Array.isArray(b.items) || b.items.length === 0) throw new ErrorPublico('Tu carro está vacío.');
-  const cantidades = new Map();
+  const lineas = new Map(); // "id:modo" → cantidad
   for (const it of b.items.slice(0, 60)) {
     const id = Number(it?.id);
     const cantidad = Number(it?.cantidad);
-    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(cantidad) || cantidad <= 0 || cantidad > 99) {
+    const modo = it?.modo === 'unidad' ? 'unidad' : 'caja';
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(cantidad) || cantidad <= 0 || cantidad > 999) {
       throw new ErrorPublico('Hay un producto inválido en el carro.');
     }
-    cantidades.set(id, (cantidades.get(id) || 0) + cantidad);
+    const k = `${id}:${modo}`;
+    lineas.set(k, (lineas.get(k) || 0) + cantidad);
   }
 
   // ---- Cliente ----
@@ -36,31 +38,42 @@ export default ruta(['POST'], async (req, res) => {
   const e = b.entrega || {};
 
   // ---- Precios y stock desde la base de datos (nunca desde el navegador) ----
-  const ids = [...cantidades.keys()];
+  // El stock se cuenta en unidades: una caja descuenta "unidades_por_caja".
+  const ids = [...new Set([...lineas.keys()].map((k) => Number(k.split(':')[0])))];
   const [productos, conf] = await Promise.all([
-    sb(`productos?id=in.(${ids.join(',')})&activo=eq.true&select=id,nombre,formato,precio,stock`),
+    sb(`productos?id=in.(${ids.join(',')})&activo=eq.true&select=id,nombre,formato,precio,stock,unidades_por_caja,precio_unidad,formato_unidad`),
     sb('configuracion?id=eq.1&select=monto_minimo,despacho_gratis_desde'),
   ]);
   const config = conf[0] || {};
   const porId = new Map(productos.map((p) => [p.id, p]));
   const sinStock = [];
   const items = [];
+  const usadas = new Map(); // unidades pedidas por producto (sumando caja + unidad)
   let subtotal = 0;
-  for (const [id, cantidad] of cantidades) {
+  for (const [k, cantidad] of lineas) {
+    const [idTxt, modo] = k.split(':');
+    const id = Number(idTxt);
     const p = porId.get(id);
-    if (!p || p.stock < cantidad) {
-      sinStock.push({ id, nombre: p?.nombre ?? null, disponible: p?.stock ?? 0 });
-      continue;
+    if (!p) { sinStock.push({ id, modo, nombre: null, disponible: 0 }); continue; }
+    const porCaja = p.unidades_por_caja || 1;
+    if (modo === 'unidad' && !(porCaja > 1 && p.precio_unidad > 0)) {
+      throw new ErrorPublico(`${p.nombre} solo se vende por caja.`);
     }
-    items.push({
-      producto_id: id,
-      nombre: p.nombre,
-      formato: p.formato,
-      precio_unitario: p.precio,
-      cantidad,
-      subtotal: p.precio * cantidad,
-    });
-    subtotal += p.precio * cantidad;
+    const precio = modo === 'unidad' ? p.precio_unidad : p.precio;
+    const unidades = cantidad * (modo === 'unidad' ? 1 : porCaja);
+    usadas.set(id, (usadas.get(id) || 0) + unidades);
+    const formato = modo === 'unidad'
+      ? `Unidad${p.formato_unidad ? ` · ${p.formato_unidad}` : ''}`
+      : `Caja${porCaja > 1 ? ` de ${porCaja} unidades` : ''}${p.formato ? ` · ${p.formato}` : ''}`;
+    items.push({ producto_id: id, nombre: p.nombre, formato, modo, unidades, precio_unitario: precio, cantidad, subtotal: precio * cantidad });
+    subtotal += precio * cantidad;
+  }
+  for (const [id, unidades] of usadas) {
+    const p = porId.get(id);
+    if (p.stock < unidades) {
+      const porCaja = p.unidades_por_caja || 1;
+      sinStock.push({ id, nombre: p.nombre, disponible: p.stock, cajas: Math.floor(p.stock / porCaja), unidades_por_caja: porCaja });
+    }
   }
   if (sinStock.length) throw new ErrorPublico('Algunos productos ya no tienen stock suficiente.', 409, { sinStock });
   if (config.monto_minimo && subtotal < config.monto_minimo) {

@@ -264,7 +264,10 @@ button.tarjeta__foto { display: block; width: 100%; padding: 0; border: 0; curso
 .ficha__formato { margin: 0 0 10px; color: var(--texto-suave); font-weight: 600; }
 .ficha__insignias { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .ficha__insignias:empty { display: none; }
-.ficha__compra { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-block: 1px solid var(--borde); margin: 8px 0 16px; }
+.ficha__compra { padding: 16px 0; border-block: 1px solid var(--borde); margin: 8px 0 16px; }
+.ficha__compra-fila { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ficha__compra .modos { margin: 14px 0 0; max-width: 360px; }
+.ficha__modo-texto { margin: 8px 0 0; color: var(--texto-suave); font-size: .88rem; font-weight: 600; }
 .precio--grande { font-size: 1.85rem; }
 .ficha__desc p { margin: 0 0 10px; }
 .ficha__datos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 18px; }
@@ -520,3 +523,25 @@ dialog form { padding: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; 
 
 /* Al saltar a una sección (#productos, #contacto…), que el título no quede bajo la cabecera fija */
 section[id] { scroll-margin-top: 84px; }
+
+/* ---------- Venta por caja (mayor) o por unidad (detalle) ---------- */
+.modos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 2px; padding: 4px; background: var(--hielo-100); border-radius: 10px; }
+.modos button {
+  border: 0; border-radius: 8px; background: transparent; padding: 7px 6px; cursor: pointer;
+  font-weight: 700; font-size: .85rem; color: var(--texto-suave); line-height: 1.15;
+}
+.modos button small { display: block; font-size: .66rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+.modos button[aria-pressed="true"] { background: var(--blanco); color: var(--azul-900); box-shadow: 0 1px 4px rgba(3, 51, 96, .14); }
+.modos button[aria-pressed="true"] small { color: var(--turquesa-osc); opacity: 1; }
+.precio__detalle { display: block; margin-top: 4px; font-family: var(--fuente); font-size: .72rem; font-weight: 600; color: var(--texto-suave); letter-spacing: 0; }
+.precio__detalle b { color: var(--turquesa-osc); }
+
+/* Admin: sub-fila de venta por unidad bajo cada producto */
+.fila-unidad td { background: #f7fafb; border-top: 0; padding-top: 6px; padding-bottom: 10px; font-size: .85rem; }
+tr[data-fila] td { border-bottom: 0; }
+.fila-unidad__titulo strong { display: block; color: var(--turquesa-osc); font-size: .8rem; margin-bottom: 4px; }
+.fila-unidad__n { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--texto-suave); white-space: nowrap; }
+.fila-unidad__n input { width: 60px; }
+.fila-unidad__formato { margin-top: 6px; width: 170px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--borde); font-size: .8rem; }
+.fila-unidad__nota { color: var(--texto-suave); font-size: .76rem; max-width: 190px; line-height: 1.35; }
+.fila-unidad--inactiva .campo-pct, .fila-unidad--inactiva .campo-pesos, .fila-unidad--inactiva .fila-unidad__formato { opacity: .45; }

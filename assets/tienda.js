@@ -17,48 +17,89 @@
   }
 
   // ---------- Carro ----------
+  // ---------- Venta por caja (precio mayorista) o por unidad (precio detalle) ----------
+  // El stock viene en UNIDADES; una caja usa "unidades_por_caja" unidades.
+  const Venta = {
+    porCaja: (p) => Math.max(1, p.unidades_por_caja || 1),
+    vendeUnidad: (p) => Venta.porCaja(p) > 1 && p.precio_unidad > 0,
+    precio: (p, modo) => (modo === 'unidad' ? p.precio_unidad : p.precio),
+    unidadesDe: (p, modo) => (modo === 'unidad' ? 1 : Venta.porCaja(p)),
+    etiqueta(p, modo) {
+      if (modo === 'unidad') return p.formato_unidad ? `Unidad · ${p.formato_unidad}` : 'Unidad';
+      const n = Venta.porCaja(p);
+      return [n > 1 ? `Caja de ${n} unidades` : '', p.formato].filter(Boolean).join(' · ') || 'Caja';
+    },
+    // Ahorro por unidad al comprar por caja respecto del precio detalle.
+    ahorro(p) {
+      if (!Venta.vendeUnidad(p)) return 0;
+      const porUnidadEnCaja = p.precio / Venta.porCaja(p);
+      return Math.max(0, Math.round((1 - porUnidadEnCaja / p.precio_unidad) * 100));
+    },
+  };
+
   let carro = leerLocal(CLAVE_CARRO, []);
   if (!Array.isArray(carro)) carro = [];
+  carro.forEach((i) => { if (i.modo !== 'unidad') i.modo = 'caja'; }); // carros antiguos: todo era por caja
   const oyentes = new Set();
+  const linea = (id, modo = 'caja') => carro.find((i) => i.id === id && i.modo === modo);
 
   function emitir() {
     guardarLocal(CLAVE_CARRO, carro);
     oyentes.forEach((fn) => fn(carro));
   }
 
+  // Máximo que se puede pedir en una línea, descontando las unidades que ya usa la otra modalidad.
+  function tope(i) {
+    const otra = carro.find((x) => x.id === i.id && x.modo !== i.modo);
+    const usadas = otra ? otra.cantidad * otra.unidadesPor : 0;
+    return Math.max(0, Math.min(999, Math.floor(((i.stock ?? 999) - usadas) / i.unidadesPor)));
+  }
+
   const Carro = {
     items: () => carro,
-    cantidad: (id) => carro.find((i) => i.id === id)?.cantidad || 0,
+    cantidad: (id, modo = 'caja') => linea(id, modo)?.cantidad || 0,
     unidades: () => carro.reduce((s, i) => s + i.cantidad, 0),
     subtotal: () => carro.reduce((s, i) => s + i.precio * i.cantidad, 0),
+    tope: (id, modo = 'caja') => { const l = linea(id, modo); return l ? tope(l) : 0; },
     alCambiar(fn) { oyentes.add(fn); return () => oyentes.delete(fn); },
-    agregar(p, n = 1) {
-      const linea = carro.find((i) => i.id === p.id);
-      const tope = Math.min(p.stock ?? 99, 99);
-      if (linea) linea.cantidad = Math.min(linea.cantidad + n, tope);
-      else carro.push({ id: p.id, nombre: p.nombre, formato: p.formato, precio: p.precio, imagen_url: p.imagen_url, categoria: p.categoria, stock: p.stock, cantidad: Math.min(n, tope) });
+    agregar(p, n = 1, modo = 'caja') {
+      let l = linea(p.id, modo);
+      if (!l) {
+        l = { id: p.id, modo, cantidad: 0 };
+        carro.push(l);
+      }
+      Object.assign(l, {
+        nombre: p.nombre, formato: Venta.etiqueta(p, modo), precio: Venta.precio(p, modo), imagen_url: p.imagen_url,
+        categoria: p.categoria, stock: p.stock, unidadesPor: Venta.unidadesDe(p, modo),
+      });
+      l.cantidad = Math.min(l.cantidad + n, tope(l));
+      if (l.cantidad <= 0) carro = carro.filter((x) => x !== l);
       emitir();
     },
-    fijar(id, cantidad) {
-      const linea = carro.find((i) => i.id === id);
-      if (!linea) return;
-      if (cantidad <= 0) carro = carro.filter((i) => i.id !== id);
-      else linea.cantidad = Math.min(cantidad, linea.stock ?? 99, 99);
+    fijar(id, cantidad, modo = 'caja') {
+      const l = linea(id, modo);
+      if (!l) return;
+      if (cantidad <= 0) carro = carro.filter((x) => x !== l);
+      else l.cantidad = Math.min(cantidad, tope(l));
       emitir();
     },
-    quitar(id) { carro = carro.filter((i) => i.id !== id); emitir(); },
+    quitar(id, modo = 'caja') { carro = carro.filter((x) => !(x.id === id && x.modo === modo)); emitir(); },
     vaciar() { carro = []; emitir(); },
-    // Actualiza precios/stock con el catálogo vigente y quita lo que ya no existe.
+    // Actualiza precios/stock con el catálogo vigente y quita lo que ya no existe o ya no se vende así.
     sincronizar(productos) {
       const porId = new Map(productos.map((p) => [p.id, p]));
       const quitados = [];
       carro = carro.filter((i) => {
         const p = porId.get(i.id);
-        if (!p || p.stock <= 0) { quitados.push(i.nombre); return false; }
-        Object.assign(i, { nombre: p.nombre, formato: p.formato, precio: p.precio, imagen_url: p.imagen_url, categoria: p.categoria, stock: p.stock });
-        i.cantidad = Math.min(i.cantidad, p.stock);
+        if (!p || p.stock <= 0 || (i.modo === 'unidad' && !Venta.vendeUnidad(p))) { quitados.push(i.nombre); return false; }
+        Object.assign(i, {
+          nombre: p.nombre, formato: Venta.etiqueta(p, i.modo), precio: Venta.precio(p, i.modo), imagen_url: p.imagen_url,
+          categoria: p.categoria, stock: p.stock, unidadesPor: Venta.unidadesDe(p, i.modo),
+        });
         return true;
       });
+      carro.forEach((i) => { i.cantidad = Math.min(i.cantidad, tope(i)); });
+      carro = carro.filter((i) => i.cantidad > 0 || !quitados.push(i.nombre));
       emitir();
       return quitados;
     },
@@ -158,9 +199,10 @@
       const b = e.target.closest('button[data-id]');
       if (!b) return;
       const id = Number(b.dataset.id);
-      if (b.dataset.accion === 'mas') Carro.fijar(id, Carro.cantidad(id) + 1);
-      if (b.dataset.accion === 'menos') Carro.fijar(id, Carro.cantidad(id) - 1);
-      if (b.dataset.accion === 'quitar') Carro.quitar(id);
+      const modo = b.dataset.modo || 'caja';
+      if (b.dataset.accion === 'mas') Carro.fijar(id, Carro.cantidad(id, modo) + 1, modo);
+      if (b.dataset.accion === 'menos') Carro.fijar(id, Carro.cantidad(id, modo) - 1, modo);
+      if (b.dataset.accion === 'quitar') Carro.quitar(id, modo);
     });
 
     let config = {};
@@ -182,14 +224,14 @@
           <div>
             <p class="linea__nombre">${esc(i.nombre)}</p>
             <div class="linea__formato">${esc(i.formato)} · ${clp(i.precio)}</div>
-            <button class="linea__quitar" data-accion="quitar" data-id="${i.id}">Quitar</button>
+            <button class="linea__quitar" data-accion="quitar" data-id="${i.id}" data-modo="${i.modo}">Quitar</button>
           </div>
           <div class="linea__derecha">
             <strong>${clp(i.precio * i.cantidad)}</strong>
             <div class="cantidad">
-              <button data-accion="menos" data-id="${i.id}" aria-label="Quitar uno">−</button>
+              <button data-accion="menos" data-id="${i.id}" data-modo="${i.modo}" aria-label="Quitar uno">−</button>
               <span>${i.cantidad}</span>
-              <button data-accion="mas" data-id="${i.id}" aria-label="Agregar uno" ${i.cantidad >= (i.stock ?? 99) ? 'disabled' : ''}>+</button>
+              <button data-accion="mas" data-id="${i.id}" data-modo="${i.modo}" aria-label="Agregar uno" ${i.cantidad >= Carro.tope(i.id, i.modo) ? 'disabled' : ''}>+</button>
             </div>
           </div>
         </div>`).join('');
@@ -248,7 +290,7 @@
     }).catch(() => {});
   }
 
-  window.Tienda = { Carro, catalogo, api, clp, esc, imagen, toast, abrirCarro: () => {} };
+  window.Tienda = { Carro, Venta, catalogo, api, clp, esc, imagen, toast, abrirCarro: () => {} };
 
   document.addEventListener('DOMContentLoaded', () => {
     montarContador();

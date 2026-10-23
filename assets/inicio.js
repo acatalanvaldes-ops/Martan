@@ -1,7 +1,7 @@
 /* Martan · portada: carruseles por categoría, búsqueda, ficha de producto y FAQ dinámicas. */
 (function () {
   'use strict';
-  const { Carro, catalogo, clp, esc, imagen, toast } = window.Tienda;
+  const { Carro, Venta, catalogo, clp, esc, imagen, toast } = window.Tienda;
 
   const vitrina = document.querySelector('[data-grilla]');
   const contCategorias = document.querySelector('[data-categorias]');
@@ -17,10 +17,17 @@
   const parrafos = (t) => esc(t).split(/\n{2,}/).map((b) => `<p>${b.replace(/\n/g, '<br>')}</p>`).join('');
 
   // ---------- Tarjetas ----------
+  // Modalidad elegida por producto: "caja" (precio mayorista, por defecto) o "unidad" (precio detalle).
+  const modoSel = new Map();
+  const modoDe = (p) => (Venta.vendeUnidad(p) && modoSel.get(p.id) === 'unidad' ? 'unidad' : 'caja');
+  const disponibles = (p, modo) => Math.floor(p.stock / Venta.unidadesDe(p, modo));
+
   function insignias(p) {
     const lista = [];
+    const cajas = disponibles(p, 'caja');
     if (p.stock <= 0) lista.push('<span class="insignia insignia--agotado">Agotado</span>');
-    else if (p.stock <= 5) lista.push(`<span class="insignia insignia--pocas">¡Quedan ${p.stock}!</span>`);
+    else if (Venta.porCaja(p) > 1 && cajas <= 3) lista.push(`<span class="insignia insignia--pocas">${cajas ? `¡Quedan ${cajas} caja${cajas === 1 ? '' : 's'}!` : 'Solo por unidad'}</span>`);
+    else if (Venta.porCaja(p) === 1 && p.stock <= 5) lista.push(`<span class="insignia insignia--pocas">¡Quedan ${p.stock}!</span>`);
     if (p.precio_anterior && p.precio_anterior > p.precio) {
       lista.push(`<span class="insignia insignia--oferta">-${Math.round((1 - p.precio / p.precio_anterior) * 100)}%</span>`);
     }
@@ -28,22 +35,44 @@
     return lista.join('');
   }
 
-  function accion(p, clase = 'btn--chico') {
-    if (p.stock <= 0) return `<button class="btn btn--claro ${clase}" disabled>Sin stock</button>`;
-    const n = Carro.cantidad(p.id);
-    if (!n) return `<button class="btn btn--azul ${clase}" data-agregar="${p.id}">Agregar</button>`;
+  function accion(p, clase = 'btn--chico', modo = modoDe(p)) {
+    if (disponibles(p, modo) <= 0) return `<button class="btn btn--claro ${clase}" disabled>Sin stock</button>`;
+    const n = Carro.cantidad(p.id, modo);
+    if (!n) return `<button class="btn btn--azul ${clase}" data-agregar="${p.id}" data-modo="${modo}">Agregar</button>`;
     return `
       <div class="cantidad">
-        <button data-menos="${p.id}" aria-label="Quitar uno">−</button>
+        <button data-menos="${p.id}" data-modo="${modo}" aria-label="Quitar uno">−</button>
         <span>${n}</span>
-        <button data-mas="${p.id}" aria-label="Agregar uno" ${n >= p.stock ? 'disabled' : ''}>+</button>
+        <button data-mas="${p.id}" data-modo="${modo}" aria-label="Agregar uno" ${n >= Carro.tope(p.id, modo) ? 'disabled' : ''}>+</button>
       </div>`;
+  }
+
+  // Selector Caja / Unidad (solo si el producto se vende también por unidad).
+  function selectorModo(p, modo) {
+    if (!Venta.vendeUnidad(p)) return '';
+    return `
+      <div class="modos" role="group" aria-label="Comprar por caja o por unidad">
+        <button data-modo-sel="caja" data-id="${p.id}" aria-pressed="${modo === 'caja'}">Caja ×${Venta.porCaja(p)}<small>Por mayor</small></button>
+        <button data-modo-sel="unidad" data-id="${p.id}" aria-pressed="${modo === 'unidad'}">Unidad<small>Al detalle</small></button>
+      </div>`;
+  }
+
+  function precioHtml(p, modo) {
+    const precio = Venta.precio(p, modo);
+    const tachado = modo === 'caja' && p.precio_anterior > p.precio ? `<s>${clp(p.precio_anterior)}</s>` : '';
+    let detalle = '';
+    if (modo === 'caja' && Venta.vendeUnidad(p)) {
+      const ah = Venta.ahorro(p);
+      detalle = `<span class="precio__detalle">${clp(p.precio / Venta.porCaja(p))} c/u${ah > 0 ? ` · <b>ahorras ${ah}%</b>` : ''}</span>`;
+    }
+    return `<div class="precio">${tachado}${clp(precio)}${detalle}</div>`;
   }
 
   function tarjeta(p) {
     const fotos = fotosDe(p).length;
+    const modo = modoDe(p);
     return `
-      <article class="tarjeta">
+      <article class="tarjeta" data-tarjeta="${p.id}">
         <button class="tarjeta__foto" data-ver="${p.id}" aria-label="Ver ficha de ${esc(p.nombre)}">
           ${imagen(p)}
           <div class="tarjeta__insignias">${insignias(p)}</div>
@@ -52,11 +81,12 @@
         <div class="tarjeta__cuerpo">
           <span class="tarjeta__cat">${esc(p.categoria)}</span>
           <h3 class="tarjeta__nombre"><button class="tarjeta__ver" data-ver="${p.id}">${esc(p.nombre)}</button></h3>
-          <span class="tarjeta__formato">${esc(p.formato)}</span>
+          <span class="tarjeta__formato">${esc(Venta.etiqueta(p, modo))}</span>
           ${p.descripcion ? `<p class="tarjeta__desc">${esc(p.descripcion)}</p>` : ''}
+          ${selectorModo(p, modo)}
           <div class="tarjeta__pie">
-            <div class="precio">${p.precio_anterior > p.precio ? `<s>${clp(p.precio_anterior)}</s>` : ''}${clp(p.precio)}</div>
-            <div data-accion-de="${p.id}">${accion(p)}</div>
+            ${precioHtml(p, modo)}
+            <div data-accion-de="${p.id}" data-modo="${modo}">${accion(p, 'btn--chico', modo)}</div>
           </div>
         </div>
       </article>`;
@@ -136,7 +166,7 @@
   function renderAcciones() {
     document.querySelectorAll('[data-accion-de]').forEach((el) => {
       const p = productos.find((x) => x.id === Number(el.dataset.accionDe));
-      if (p) el.innerHTML = accion(p, el.dataset.clase ?? 'btn--chico');
+      if (p) el.innerHTML = accion(p, el.dataset.clase ?? 'btn--chico', el.dataset.modo || 'caja');
     });
   }
 
@@ -157,9 +187,10 @@
     const id = Number(b.dataset.agregar || b.dataset.mas || b.dataset.menos);
     const p = productos.find((x) => x.id === id);
     if (!p) return;
-    if (b.dataset.agregar) { Carro.agregar(p); toast(`${p.nombre} agregado al carro`); }
-    if (b.dataset.mas) Carro.fijar(id, Carro.cantidad(id) + 1);
-    if (b.dataset.menos) Carro.fijar(id, Carro.cantidad(id) - 1);
+    const modo = b.dataset.modo || 'caja';
+    if (b.dataset.agregar) { Carro.agregar(p, 1, modo); toast(`${p.nombre} (${modo === 'unidad' ? 'unidad' : 'caja'}) agregado al carro`); }
+    if (b.dataset.mas) Carro.fijar(id, Carro.cantidad(id, modo) + 1, modo);
+    if (b.dataset.menos) Carro.fijar(id, Carro.cantidad(id, modo) - 1, modo);
   });
 
   vitrina.addEventListener('click', (e) => {
@@ -197,6 +228,31 @@
     return `<section class="ficha__seccion${clase}"${marca}><h3>${titulo}</h3>${parrafos(contenido)}</section>`;
   }
 
+  // Bloque de compra de la ficha: selector Caja/Unidad, precio y botón.
+  function compraFicha(p) {
+    const modo = modoDe(p);
+    return `
+      <div class="ficha__compra-fila">
+        ${precioHtml(p, modo).replace('class="precio"', 'class="precio precio--grande"')}
+        <div data-accion-de="${p.id}" data-clase="" data-modo="${modo}">${accion(p, '', modo)}</div>
+      </div>
+      ${selectorModo(p, modo)}
+      <p class="ficha__modo-texto">${esc(Venta.etiqueta(p, modo))}</p>`;
+  }
+
+  // Cambio Caja ↔ Unidad: repinta la tarjeta y, si está abierta, la ficha.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-modo-sel]');
+    if (!b) return;
+    const p = productos.find((x) => x.id === Number(b.dataset.id));
+    if (!p) return;
+    modoSel.set(p.id, b.dataset.modoSel);
+    const t = vitrina.querySelector(`[data-tarjeta="${p.id}"]`);
+    if (t) t.outerHTML = tarjeta(p);
+    const compra = ficha.open && ficha.dataset.slug === p.slug && ficha.querySelector('[data-ficha-compra]');
+    if (compra) compra.innerHTML = compraFicha(p);
+  });
+
   function abrirFicha(id) {
     const p = productos.find((x) => x.id === id);
     if (!p) return;
@@ -210,7 +266,8 @@
     ficha.classList.toggle('ficha--una-foto', fotos.length <= 1);
 
     const detalles = [
-      ['Formato', p.formato],
+      ['Formato', Venta.etiqueta(p, 'caja')],
+      ['Venta', Venta.vendeUnidad(p) ? `Por caja (mayor) o por unidad (detalle)` : 'Por caja'],
       ['Categoría', p.categoria],
       ['Temporada', p.temporada],
       ['Disponibilidad', p.stock <= 0 ? 'Agotado por ahora' : p.stock <= 5 ? `Últimas ${p.stock} unidades` : 'En stock'],
@@ -222,10 +279,7 @@
       ${p.formato ? `<p class="ficha__formato">${esc(p.formato)}</p>` : ''}
       <div class="ficha__insignias">${insignias(p)}</div>
       ${p.receta ? '<button class="ficha__ir-receta" data-ir-receta>Ver receta sugerida ↓</button>' : ''}
-      <div class="ficha__compra">
-        <div class="precio precio--grande">${p.precio_anterior > p.precio ? `<s>${clp(p.precio_anterior)}</s>` : ''}${clp(p.precio)}</div>
-        <div data-accion-de="${p.id}" data-clase="">${accion(p, '')}</div>
-      </div>
+      <div class="ficha__compra" data-ficha-compra>${compraFicha(p)}</div>
       ${p.descripcion ? `<div class="ficha__desc">${parrafos(p.descripcion)}</div>` : ''}
       <dl class="ficha__datos">${detalles.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       ${seccion('Conservación', p.conservacion)}
