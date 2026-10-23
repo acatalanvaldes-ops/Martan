@@ -1,7 +1,7 @@
 // POST /api/checkout → valida el carro en el servidor, crea el pedido y la preferencia de Mercado Pago.
 import { ruta, ErrorPublico, urlBase, texto, clp } from './_lib/http.js';
 import { sb } from './_lib/supabase.js';
-import { mp, modoPrueba } from './_lib/mercadopago.js';
+import { mp, modoPrueba, cuentaMP } from './_lib/mercadopago.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -100,6 +100,8 @@ export default ruta(['POST'], async (req, res) => {
   // ---- Preferencia de pago ----
   const base = urlBase(req);
   const vuelta = `${base}/pedido?id=${pedido.id}`;
+  // Modo prueba: token de prueba clásico (TEST-) o cuenta de Mercado Pago marcada como usuario de prueba.
+  const prueba = modoPrueba() || Boolean((await cuentaMP()).usuario_prueba);
   let preferencia;
   try {
     preferencia = await mp('/checkout/preferences', {
@@ -118,7 +120,8 @@ export default ruta(['POST'], async (req, res) => {
             ? [{ id: 'despacho', title: `Despacho a ${entrega.comuna}`, quantity: 1, unit_price: costoDespacho, currency_id: 'CLP' }]
             : []),
         ],
-        payer: { name: cliente.nombre, email: cliente.email },
+        // En prueba no se envía el comprador: Mercado Pago bloquea el pago si no coincide con la cuenta de prueba que inició sesión.
+        ...(prueba ? {} : { payer: { name: cliente.nombre, email: cliente.email } }),
         external_reference: pedido.id,
         back_urls: { success: vuelta, failure: vuelta, pending: vuelta },
         auto_return: 'approved',
@@ -137,6 +140,6 @@ export default ruta(['POST'], async (req, res) => {
 
   await sb(`pedidos?id=eq.${pedido.id}`, { method: 'PATCH', body: { mp_preferencia_id: preferencia.id } });
   // Con credenciales de prueba se paga en el entorno de pruebas (sandbox); con las de producción, en el real.
-  const urlPago = modoPrueba() && preferencia.sandbox_init_point ? preferencia.sandbox_init_point : preferencia.init_point;
+  const urlPago = prueba && preferencia.sandbox_init_point ? preferencia.sandbox_init_point : preferencia.init_point;
   res.status(201).json({ pedidoId: pedido.id, numero: pedido.numero, urlPago });
 });
