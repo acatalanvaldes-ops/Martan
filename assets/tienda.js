@@ -298,7 +298,8 @@
       a.target = '_blank';
       a.rel = 'noopener';
       a.setAttribute('aria-label', 'Escríbenos por WhatsApp');
-      a.innerHTML = `${ICONO_WSP}<span class="wsp-flotante__texto">¿Dudas? Escríbenos</span>`;
+      a.title = '¿Dudas? Escríbenos por WhatsApp';
+      a.innerHTML = ICONO_WSP;
       document.body.appendChild(a);
     }).catch(() => {});
   }

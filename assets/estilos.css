@@ -548,16 +548,16 @@ tr[data-fila] td { border-bottom: 0; }
 .ficha__nota-precio { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: #fff6e0; border-left: 3px solid var(--mostaza); font-size: .82rem; color: var(--texto); }
 .cantidad span { white-space: nowrap; padding: 0 4px; }
 
-/* ---------- Botón flotante de WhatsApp ---------- */
+/* ---------- Botón flotante de WhatsApp (solo ícono, compacto) ---------- */
 .wsp-flotante {
-  position: fixed; right: 20px; bottom: 20px; z-index: 35;
-  display: inline-flex; align-items: center; gap: 10px; height: 58px; padding: 0 16px 0 14px;
-  border-radius: 29px; background: #25D366; color: #fff; text-decoration: none; font-weight: 700; font-size: .92rem;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, .22); transition: transform .15s, box-shadow .15s;
+  position: fixed; right: 18px; bottom: 18px; z-index: 35;
+  display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%;
+  background: #25D366; color: #fff; text-decoration: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .22); transition: transform .15s, box-shadow .15s;
 }
-.wsp-flotante:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(0, 0, 0, .28); color: #fff; }
-.wsp-flotante svg { width: 30px; height: 30px; flex: none; }
+.wsp-flotante:hover { transform: scale(1.07); box-shadow: 0 10px 24px rgba(0, 0, 0, .28); color: #fff; }
+.wsp-flotante svg { width: 28px; height: 28px; }
 @media (max-width: 720px) {
-  .wsp-flotante { right: 14px; bottom: 14px; width: 56px; height: 56px; padding: 0; justify-content: center; border-radius: 50%; }
-  .wsp-flotante__texto { display: none; }
+  .wsp-flotante { right: 12px; bottom: 12px; width: 46px; height: 46px; }
+  .wsp-flotante svg { width: 26px; height: 26px; }
 }
