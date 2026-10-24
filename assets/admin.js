@@ -527,7 +527,7 @@
     celda('cajas').textContent = kilos > 0 ? `${kgTxt(stock)} kg = ${cajas} caja${cajas === 1 ? '' : 's'}` : `${kgTxt(stock)} caja${stock === 1 ? '' : 's'}`;
     sub.querySelector('[data-nota-unidad]').textContent = !(kilos > 0)
       ? 'Indica los kilos por caja: el stock se cuenta en kilos y se puede vender por kilo.'
-      : !habilitado ? 'Caja de 1 kg: se vende solo por caja.'
+      : !habilitado ? '⚠ Caja de 1 kg: si la caja trae más kilos, corrígelos aquí para habilitar el precio por kilo.'
         : precioKg > 0 ? 'Se vende por caja (por mayor) y por kilo (al detalle).' : 'Sin precio por kilo: se vende solo por caja.';
   }
 

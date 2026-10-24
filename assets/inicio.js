@@ -64,7 +64,7 @@
       const ah = Venta.ahorro(p);
       detalle = `<span class="precio__detalle">${clp(p.precio / Venta.kilos(p))} el kg por mayor${ah > 0 ? ` · <b>ahorras ${ah}%</b>` : ''}</span>`;
     } else if (modo === 'kilo') {
-      detalle = '<span class="precio__detalle">el kg, al detalle</span>';
+      detalle = '<span class="precio__detalle">por kg, precio al detalle</span>';
     } else {
       detalle = '<span class="precio__detalle">precio por mayor</span>';
     }
@@ -231,6 +231,15 @@
     return `<section class="ficha__seccion${clase}"${marca}><h3>${titulo}</h3>${parrafos(contenido)}</section>`;
   }
 
+  // Nota de la ficha con los dos valores: caja = por mayor, kilo = al detalle (cada concepto una sola vez).
+  function notaPrecios(p) {
+    const k = Venta.kilos(p);
+    const caja = `<strong>Valor caja${k ? ` (${Venta.kg(k)} kg)` : ''}:</strong> ${clp(p.precio)}, precio por mayor`;
+    return Venta.vendeKilo(p)
+      ? `${caja} · <strong>Valor por kilo:</strong> ${clp(p.precio_kilo)}/kg, precio al detalle`
+      : `${caja}. Este producto se vende solo por caja.`;
+  }
+
   // Bloque de compra de la ficha: selector Caja/Kilo, precio y botón.
   function compraFicha(p) {
     const modo = modoDe(p);
@@ -240,10 +249,7 @@
         <div data-accion-de="${p.id}" data-clase="" data-modo="${modo}">${accion(p, '', modo)}</div>
       </div>
       ${selectorModo(p, modo)}
-      <p class="ficha__modo-texto">${esc(Venta.etiqueta(p, modo))}</p>
-      <p class="ficha__nota-precio">${Venta.vendeKilo(p)
-        ? '<strong>Valor caja:</strong> precio por mayor. <strong>Valor por kilo:</strong> precio al detalle.'
-        : '<strong>Valor caja:</strong> precio por mayor.'}</p>`;
+      <p class="ficha__nota-precio">${notaPrecios(p)}</p>`;
   }
 
   // Cambio Caja ↔ Kilo: repinta la tarjeta y, si está abierta, la ficha.

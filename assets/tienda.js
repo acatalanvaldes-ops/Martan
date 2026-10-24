@@ -29,9 +29,9 @@
     unidadesDe: (p, modo) => (modo === 'kilo' ? 1 : Venta.porCaja(p)),
     kg,
     etiqueta(p, modo) {
-      if (modo === 'kilo') return 'Por kilo · precio al detalle';
+      if (modo === 'kilo') return 'Por kilo';
       const k = Venta.kilos(p);
-      return k ? `Caja de ${kg(k)} kg · precio por mayor` : `Caja${p.formato ? ` · ${p.formato}` : ''}`;
+      return k ? `Caja de ${kg(k)} kg` : `Caja${p.formato ? ` · ${p.formato}` : ''}`;
     },
     // Cuánto más barato sale el kilo comprando la caja (por mayor) que al detalle.
     ahorro(p) {
