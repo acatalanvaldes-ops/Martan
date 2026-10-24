@@ -6,17 +6,24 @@
   // ---------- Preguntas frecuentes con datos reales de la tienda ----------
   catalogo().then(({ zonas = [], config = {} }) => {
     const gratis = config.despacho_gratis_desde ? ` Despacho gratis en compras sobre ${clp(config.despacho_gratis_desde)}.` : '';
-    document.querySelector('[data-comunas]').textContent = zonas.length
-      ? `Despachamos a: ${zonas.map((z) => z.comuna).join(', ')}.`
-      : 'Estamos definiendo las comunas de despacho. Escríbenos para consultar por la tuya.';
-    const costos = zonas.map((z) => z.costo);
-    const min = Math.min(...costos);
-    const max = Math.max(...costos);
-    document.querySelector('[data-costo-despacho]').textContent = !costos.length
-      ? `Lo verás antes de pagar, según tu comuna.${gratis}`
-      : min === max
-        ? `El despacho cuesta ${clp(min)}.${gratis}`
-        : `Depende de tu comuna: desde ${clp(min)} hasta ${clp(max)}. Lo verás antes de pagar.${gratis}`;
+    // Agrupa las comunas por tarifa: la más baja es Gran Santiago y la más alta, las comunas periféricas.
+    const tarifas = [...new Set(zonas.map((z) => z.costo))].sort((a, b) => a - b);
+    const comunasDe = (costo) => zonas.filter((z) => z.costo === costo).map((z) => z.comuna)
+      .sort((a, b) => a.localeCompare(b, 'es')).join(', ');
+    const nombreTarifa = (i) => (tarifas.length === 2 ? (i === 0 ? 'Gran Santiago' : 'Comunas periféricas') : `Tarifa ${clp(tarifas[i])}`);
+    const comunas = document.querySelector('[data-comunas]');
+    if (zonas.length) {
+      comunas.innerHTML = 'Despachamos a todas las comunas de la Región Metropolitana.' + tarifas.map((c, i) =>
+        `<br><br><strong>${nombreTarifa(i)} (${clp(c)}):</strong> ${esc(comunasDe(c))}.`).join('');
+    }
+    const costo = document.querySelector('[data-costo-despacho]');
+    if (tarifas.length === 2) {
+      costo.textContent = `${clp(tarifas[0])} en Gran Santiago y ${clp(tarifas[1])} en las comunas periféricas de la Región Metropolitana (${comunasDe(tarifas[1])}). Lo verás en el resumen antes de pagar.${gratis}`;
+    } else if (tarifas.length === 1) {
+      costo.textContent = `El despacho cuesta ${clp(tarifas[0])} a cualquier comuna de la Región Metropolitana.${gratis}`;
+    } else if (tarifas.length) {
+      costo.textContent = `Depende de tu comuna: desde ${clp(tarifas[0])} hasta ${clp(tarifas[tarifas.length - 1])}. Lo verás antes de pagar.${gratis}`;
+    }
     document.querySelector('[data-minimo]').textContent = config.monto_minimo
       ? `Sí, el monto mínimo de compra es ${clp(config.monto_minimo)}.`
       : 'No, puedes comprar desde un producto.';

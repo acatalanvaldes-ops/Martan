@@ -2,6 +2,7 @@
 import { ruta, ErrorPublico, urlBase, texto, clp } from './_lib/http.js';
 import { sb } from './_lib/supabase.js';
 import { mp, modoPrueba, cuentaMP } from './_lib/mercadopago.js';
+import { normalizarRut } from './_lib/rut.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -33,6 +34,31 @@ export default ruta(['POST'], async (req, res) => {
   if (cliente.nombre.length < 3) throw new ErrorPublico('Ingresa tu nombre completo.');
   if (!EMAIL.test(cliente.email)) throw new ErrorPublico('Ingresa un correo válido.');
   if (cliente.telefono.replace(/\D/g, '').length < 8) throw new ErrorPublico('Ingresa un teléfono válido.');
+  if (cliente.rut) {
+    cliente.rut = normalizarRut(cliente.rut);
+    if (!cliente.rut) throw new ErrorPublico('Tu RUT no es válido. Revisa el número y el dígito verificador.');
+  }
+
+  // ---- Documento tributario: boleta (sin datos extra) o factura (datos que exige el SII) ----
+  const d = b.documento || {};
+  const documento = d.tipo === 'factura' ? 'factura' : 'boleta';
+  let factura = {};
+  if (documento === 'factura') {
+    factura = {
+      factura_razon_social: texto(d.razon_social, 150),
+      factura_rut: normalizarRut(d.rut),
+      factura_giro: texto(d.giro, 150),
+      factura_direccion: texto(d.direccion, 200),
+      factura_comuna: texto(d.comuna, 80),
+      factura_email: texto(d.email, 160).toLowerCase() || cliente.email,
+    };
+    if (factura.factura_razon_social.length < 3) throw new ErrorPublico('Ingresa la razón social para la factura.');
+    if (!factura.factura_rut) throw new ErrorPublico('El RUT de la empresa no es válido. Revisa el número y el dígito verificador.');
+    if (factura.factura_giro.length < 3) throw new ErrorPublico('Ingresa el giro de la empresa para la factura.');
+    if (factura.factura_direccion.length < 5) throw new ErrorPublico('Ingresa la dirección comercial para la factura.');
+    if (!factura.factura_comuna) throw new ErrorPublico('Ingresa la comuna de la dirección comercial.');
+    if (!EMAIL.test(factura.factura_email)) throw new ErrorPublico('Ingresa un correo válido para enviar la factura.');
+  }
 
   // Martan solo trabaja con despacho a domicilio.
   const e = b.entrega || {};
@@ -104,6 +130,8 @@ export default ruta(['POST'], async (req, res) => {
       cliente_email: cliente.email,
       cliente_telefono: cliente.telefono,
       cliente_rut: cliente.rut || null,
+      documento,
+      ...factura,
       entrega: 'despacho',
       ...entrega,
       notas: texto(b.notas, 500) || null,

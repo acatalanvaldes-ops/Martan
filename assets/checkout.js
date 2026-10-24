@@ -1,4 +1,4 @@
-/* Martan · checkout: datos del cliente, despacho y redirección a Mercado Pago. */
+/* Martan · checkout: datos del cliente, despacho, boleta o factura y redirección a Mercado Pago. */
 (function () {
   'use strict';
   const { Carro, catalogo, api, clp, esc, imagen } = window.Tienda;
@@ -56,7 +56,40 @@
   function prepararComunas() {
     selComuna.innerHTML = '<option value="">Selecciona…</option>' +
       datos.zonas.map((z) => `<option value="${esc(z.comuna)}">${esc(z.comuna)} · ${clp(z.costo)}</option>`).join('');
+    document.getElementById('lista-comunas-factura').innerHTML =
+      datos.zonas.map((z) => `<option value="${esc(z.comuna)}">`).join('');
   }
+
+  // ---------- Boleta o factura ----------
+  const bloqueFactura = document.querySelector('[data-bloque-factura]');
+  const ayudaBoleta = document.querySelector('[data-ayuda-boleta]');
+  const CAMPOS_FACTURA = ['f_razon_social', 'f_rut', 'f_giro', 'f_direccion', 'f_comuna', 'f_email'];
+  const esFactura = () => form.documento.value === 'factura';
+
+  function mostrarDocumento() {
+    bloqueFactura.classList.toggle('oculto', !esFactura());
+    ayudaBoleta.classList.toggle('oculto', esFactura());
+  }
+
+  // Valida un RUT chileno (módulo 11) y lo devuelve como 12.345.678-9, o null si no es válido.
+  function normalizarRut(valor) {
+    const limpio = String(valor || '').toUpperCase().replace(/[^0-9K]/g, '');
+    if (limpio.length < 2) return null;
+    const cuerpo = limpio.slice(0, -1);
+    const dv = limpio.slice(-1);
+    if (!/^\d{1,8}$/.test(cuerpo)) return null;
+    let suma = 0, mult = 2;
+    for (let i = cuerpo.length - 1; i >= 0; i--) { suma += Number(cuerpo[i]) * mult; mult = mult === 7 ? 2 : mult + 1; }
+    const r = 11 - (suma % 11);
+    const esperado = r === 11 ? '0' : r === 10 ? 'K' : String(r);
+    if (dv !== esperado) return null;
+    return Number(cuerpo).toLocaleString('es-CL') + '-' + dv;
+  }
+  // Al salir del campo, deja el RUT con puntos y guion.
+  [form.rut, form.f_rut].forEach((campo) => campo.addEventListener('blur', () => {
+    const n = normalizarRut(campo.value);
+    if (n) campo.value = n;
+  }));
 
   // Recuerda los datos del cliente en este navegador para la próxima compra.
   function cargarDatosGuardados() {
@@ -66,10 +99,18 @@
       if (guardados[k] && !form[k].value) form[k].value = guardados[k];
     });
     if (guardados.comuna) selComuna.value = guardados.comuna;
+    // Los datos de la factura se recuerdan aparte, para no tener que escribirlos cada vez.
+    const fac = guardados.factura || {};
+    CAMPOS_FACTURA.forEach((k) => { if (fac[k] && !form[k].value) form[k].value = fac[k]; });
+    if (guardados.documento === 'factura') form.documento.value = 'factura';
+    mostrarDocumento();
   }
   function guardarDatos() {
     const d = {};
     ['nombre', 'email', 'telefono', 'rut', 'direccion', 'referencia', 'comuna'].forEach((k) => { d[k] = form[k].value.trim(); });
+    d.documento = form.documento.value;
+    d.factura = {};
+    CAMPOS_FACTURA.forEach((k) => { d.factura[k] = form[k].value.trim(); });
     try { localStorage.setItem(CLAVE_DATOS, JSON.stringify(d)); } catch { /* sin almacenamiento */ }
   }
 
@@ -80,11 +121,21 @@
     if (f.telefono.value.replace(/\D/g, '').length < 8) return [f.telefono, 'Ingresa un teléfono válido.'];
     if (!selComuna.value) return [selComuna, 'Elige tu comuna.'];
     if (f.direccion.value.trim().length < 5) return [f.direccion, 'Ingresa tu dirección.'];
+    if (f.rut.value.trim() && !normalizarRut(f.rut.value)) return [f.rut, 'Tu RUT no es válido. Revisa el número y el dígito verificador.'];
+    if (esFactura()) {
+      if (f.f_razon_social.value.trim().length < 3) return [f.f_razon_social, 'Ingresa la razón social de la empresa.'];
+      if (!normalizarRut(f.f_rut.value)) return [f.f_rut, 'El RUT de la empresa no es válido. Revisa el número y el dígito verificador.'];
+      if (f.f_giro.value.trim().length < 3) return [f.f_giro, 'Ingresa el giro de la empresa.'];
+      if (f.f_direccion.value.trim().length < 5) return [f.f_direccion, 'Ingresa la dirección comercial de la empresa.'];
+      if (f.f_comuna.value.trim().length < 3) return [f.f_comuna, 'Ingresa la comuna de la empresa.'];
+      if (f.f_email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.f_email.value.trim())) return [f.f_email, 'El correo para la factura no es válido.'];
+    }
     if (!f.acepto.checked) return [f.acepto, 'Debes aceptar los términos y condiciones.'];
     return null;
   }
 
   selComuna.addEventListener('change', renderResumen);
+  form.querySelectorAll('[name="documento"]').forEach((r) => r.addEventListener('change', mostrarDocumento));
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -104,6 +155,10 @@
           items: Carro.items().map((i) => ({ id: i.id, modo: i.modo, cantidad: i.cantidad })),
           cliente: { nombre: f.nombre.value, email: f.email.value, telefono: f.telefono.value, rut: f.rut.value },
           entrega: { tipo: 'despacho', comuna: selComuna.value, direccion: f.direccion.value, referencia: f.referencia.value },
+          documento: esFactura() ? {
+            tipo: 'factura', razon_social: f.f_razon_social.value, rut: f.f_rut.value, giro: f.f_giro.value,
+            direccion: f.f_direccion.value, comuna: f.f_comuna.value, email: f.f_email.value,
+          } : { tipo: 'boleta' },
           notas: f.notas.value,
         },
       });

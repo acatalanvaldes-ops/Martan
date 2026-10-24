@@ -65,7 +65,7 @@ function plantilla(p, titulo, mensaje, enlace) {
             <tr><td style="padding:8px 0;color:#52677c">Despacho</td><td style="padding:8px 0;text-align:right;color:#52677c">${p.costo_despacho ? clp(p.costo_despacho) : 'Gratis'}</td></tr>
             <tr><td style="padding:8px 0;font-weight:700;color:#033360">Total</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#033360">${clp(p.total)}</td></tr>
           </table>
-          <p style="margin:18px 0 0;color:#52677c;font-size:13px">Despacho a: ${esc(p.direccion)}, ${esc(p.comuna)}</p>
+          <p style="margin:18px 0 0;color:#52677c;font-size:13px">Despacho a: ${esc(p.direccion)}, ${esc(p.comuna)}<br>Documento: ${esc(documento(p))}</p>
           <p style="margin:24px 0 0;text-align:center">
             <a href="${enlace}" style="display:inline-block;background:#E99A00;color:#033360;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:10px">Ver mi pedido</a>
           </p>
@@ -78,10 +78,14 @@ function plantilla(p, titulo, mensaje, enlace) {
   </table></body></html>`;
 }
 
+const documento = (p) => (p.documento === 'factura'
+  ? `Factura a ${p.factura_razon_social} (RUT ${p.factura_rut}), se enviará a ${p.factura_email}`
+  : 'Boleta electrónica');
+
 // Envía al cliente el correo del estado actual de su pedido. Nunca lanza error: devuelve el resultado.
 export async function notificarEstado(pedidoId) {
   try {
-    const [p] = await sb(`pedidos?id=eq.${pedidoId}&select=id,numero,estado,cliente_nombre,cliente_email,direccion,comuna,costo_despacho,total,pedido_items(nombre,formato,cantidad,subtotal)`);
+    const [p] = await sb(`pedidos?id=eq.${pedidoId}&select=id,numero,estado,cliente_nombre,cliente_email,direccion,comuna,costo_despacho,total,documento,factura_razon_social,factura_rut,factura_email,pedido_items(nombre,formato,cantidad,subtotal)`);
     if (!p) return { enviado: false, motivo: 'pedido_no_encontrado' };
     const t = textos(p);
     if (!t) return { enviado: false, motivo: 'estado_sin_correo' };
@@ -91,7 +95,7 @@ export async function notificarEstado(pedidoId) {
     const [conf] = await sb('configuracion?id=eq.1&select=email_contacto').catch(() => [{}]);
     const texto = `${titulo}\n\nHola ${(p.cliente_nombre || '').split(' ')[0]}, ${mensaje}\n\n` +
       (p.pedido_items || []).map((i) => `${i.cantidad} × ${i.nombre} — ${clp(i.subtotal)}`).join('\n') +
-      `\nDespacho: ${p.costo_despacho ? clp(p.costo_despacho) : 'Gratis'}\nTotal: ${clp(p.total)}\n\nVer tu pedido: ${enlace}\n\nMartan Congelados · www.martan.cl`;
+      `\nDespacho: ${p.costo_despacho ? clp(p.costo_despacho) : 'Gratis'}\nTotal: ${clp(p.total)}\nDocumento: ${documento(p)}\n\nVer tu pedido: ${enlace}\n\nMartan Congelados · www.martan.cl`;
     return await enviarCorreo({ para: p.cliente_email, asunto, html: plantilla(p, titulo, mensaje, enlace), texto, responderA: process.env.MAIL_REPLY_TO || conf?.email_contacto || 'administracion@martan.cl' });
   } catch (e) {
     console.error('notificarEstado', e);

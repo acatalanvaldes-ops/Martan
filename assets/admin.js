@@ -133,6 +133,15 @@
   });
 
   // ---------- Pedidos ----------
+  // Boleta (sin datos extra) o factura con los datos que la empresa entregó al pagar.
+  function documento(p) {
+    if (p.documento !== 'factura') return '<span class="estado-pill">Boleta</span>';
+    return `<span class="estado-pill" data-e="pagado">Factura</span><br>
+      <strong>${esc(p.factura_razon_social)}</strong><br>RUT ${esc(p.factura_rut)}<br>
+      <small>Giro: ${esc(p.factura_giro)}<br>${esc(p.factura_direccion)}, ${esc(p.factura_comuna)}<br>
+      <a href="mailto:${esc(p.factura_email)}">${esc(p.factura_email)}</a></small>`;
+  }
+
   function renderPedidos(pedidos) {
     if (!pedidos.length) { contenido.innerHTML = '<div class="vacio">No hay pedidos.</div>'; return; }
     const pagados = pedidos.filter((p) => !['pendiente_pago', 'rechazado', 'cancelado'].includes(p.estado));
@@ -140,7 +149,7 @@
     contenido.innerHTML = `
       <p style="color:var(--texto-suave);margin:0 0 12px">${pedidos.length} pedidos mostrados · ${pagados.length} pagados · ventas ${clp(ventas)}</p>
       <div class="tabla-envoltura"><table>
-        <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Despacho</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Despacho</th><th>Documento</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
         <tbody>${pedidos.map((p) => `
           <tr>
             <td><strong>${p.numero}</strong></td>
@@ -148,6 +157,7 @@
             <td>${esc(p.cliente_nombre)}<br><a href="mailto:${esc(p.cliente_email)}">${esc(p.cliente_email)}</a><br><a href="tel:${esc(p.cliente_telefono)}">${esc(p.cliente_telefono)}</a>${p.cliente_rut ? `<br>${esc(p.cliente_rut)}` : ''}</td>
             <td>${esc(p.comuna)}<br>${esc(p.direccion)}${p.referencia ? `<br><small>${esc(p.referencia)}</small>` : ''}
               ${p.notas ? `<br><small><strong>Nota:</strong> ${esc(p.notas)}</small>` : ''}</td>
+            <td>${documento(p)}</td>
             <td><ul class="detalle-items">${p.pedido_items.map((i) => `<li>${i.cantidad} × ${esc(i.nombre)} <span class="estado-pill" style="padding:1px 7px;font-size:.7rem">${i.modo === 'kilo' ? 'por kilo' : i.modo === 'unidad' ? 'unidad' : 'caja'}</span></li>`).join('')}</ul></td>
             <td><strong>${clp(p.total)}</strong>${p.costo_despacho ? `<br><small>envío ${clp(p.costo_despacho)}</small>` : ''}</td>
             <td>

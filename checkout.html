@@ -80,7 +80,52 @@
         </section>
 
         <section class="panel">
-          <h2>3. Comentarios</h2>
+          <h2>3. Boleta o factura</h2>
+          <div class="opciones">
+            <label class="opcion">
+              <input type="radio" name="documento" value="boleta" checked>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6M9 15h4"/></svg>
+              <div><strong>Boleta</strong><span>Para personas</span></div>
+            </label>
+            <label class="opcion">
+              <input type="radio" name="documento" value="factura">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h16v18H4zM8 7h8M8 11h8M8 15h5"/><path d="M3 21h18"/></svg>
+              <div><strong>Factura</strong><span>Para empresas</span></div>
+            </label>
+          </div>
+          <p class="aviso" style="margin:0" data-ayuda-boleta>La boleta electrónica se emite a nombre del comprador y se envía a tu correo. No necesitas datos adicionales.</p>
+          <div class="campos oculto" data-bloque-factura style="margin-top:4px">
+            <div class="campo campo--ancho">
+              <label for="f-razon">Razón social</label>
+              <input id="f-razon" name="f_razon_social" maxlength="150" autocomplete="organization" placeholder="Ej.: Comercial Ejemplo SpA">
+            </div>
+            <div class="campo">
+              <label for="f-rut">RUT de la empresa</label>
+              <input id="f-rut" name="f_rut" maxlength="12" placeholder="76.123.456-7">
+              <small data-f-rut-ayuda>Con dígito verificador.</small>
+            </div>
+            <div class="campo">
+              <label for="f-giro">Giro</label>
+              <input id="f-giro" name="f_giro" maxlength="150" placeholder="Ej.: Restaurante">
+            </div>
+            <div class="campo">
+              <label for="f-direccion">Dirección comercial</label>
+              <input id="f-direccion" name="f_direccion" maxlength="200" placeholder="Calle, número, oficina">
+            </div>
+            <div class="campo">
+              <label for="f-comuna">Comuna</label>
+              <input id="f-comuna" name="f_comuna" maxlength="80" list="lista-comunas-factura" placeholder="Ej.: Providencia">
+              <datalist id="lista-comunas-factura"></datalist>
+            </div>
+            <div class="campo campo--ancho">
+              <label for="f-email">Correo para enviar la factura <span class="opcional">(si es distinto al tuyo)</span></label>
+              <input id="f-email" name="f_email" type="email" maxlength="160" placeholder="facturas@empresa.cl">
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>4. Comentarios</h2>
           <div class="campo">
             <label for="notas" class="sr">Comentarios</label>
             <textarea id="notas" name="notas" rows="3" maxlength="500" placeholder="¿Algo que debamos saber sobre tu pedido o la entrega?"></textarea>
