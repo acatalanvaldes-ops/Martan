@@ -195,6 +195,11 @@
     // Si el producto aún tiene el precio marcador (3), el campo de precio parte vacío.
     const precioInicial = (p) => (p.precio > 3 ? p.precio : '');
     let categoriaActual = null;
+    // Agrupa por categoría (en el orden en que aparece cada una) para que cada categoría sea una sola franja,
+    // aunque sus productos tengan números de orden separados (ej. Aperitivos: papas 101 y empanadas 301).
+    const posicion = new Map();
+    productos.forEach((p, i) => { if (!posicion.has(p.categoria)) posicion.set(p.categoria, i); });
+    const agrupados = productos.map((p, i) => [p, i]).sort((a, b) => posicion.get(a[0].categoria) - posicion.get(b[0].categoria) || a[1] - b[1]).map(([p]) => p);
     contenido.innerHTML = `
       <div class="aviso" style="margin-bottom:12px">
         <strong>Cómo cargar precios:</strong> escribe el <strong>costo neto</strong> (sin IVA) y el <strong>% de margen</strong>:
@@ -216,7 +221,7 @@
           <th>Visible</th>
           <th></th>
         </tr></thead>
-        <tbody>${productos.map((p) => {
+        <tbody>${agrupados.map((p) => {
           const cabecera = p.categoria !== categoriaActual
             ? `<tr class="fila-categoria"><td colspan="11">${esc(p.categoria)}</td></tr>` : '';
           categoriaActual = p.categoria;
