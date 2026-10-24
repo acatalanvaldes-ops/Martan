@@ -73,6 +73,10 @@ function limpiarProducto(p) {
   if ('precio_kilo' in p) extra.precio_kilo = entero(p.precio_kilo, { nulo: true });
   if ('kilos_por_bolsa' in p) extra.kilos_por_bolsa = decimal(p.kilos_por_bolsa, { nulo: true, positivo: true });
   if ('margen_kilo' in p) extra.margen_kilo = porcentaje(p.margen_kilo);
+  // Error típico: escribir la cantidad de bolsas (ej. 40) en vez del peso de cada bolsa (0,15 kg).
+  if (extra.kilos_por_bolsa && extra.kilos_por_caja && extra.kilos_por_bolsa > extra.kilos_por_caja) {
+    throw new ErrorPublico(`«Kg por bolsa» es el peso de una bolsa en kilos (ej. 150 g = 0.15), no la cantidad de bolsas. No puede ser mayor que los kilos por caja (${extra.kilos_por_caja}).`);
+  }
   for (const [campo, max] of Object.entries(CAMPOS_FICHA)) {
     if (campo in p) extra[campo] = opcional(p[campo], max);
   }

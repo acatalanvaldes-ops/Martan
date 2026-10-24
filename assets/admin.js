@@ -260,7 +260,7 @@
             <td class="fila-unidad__titulo">
               <strong>↳ Por kilo · al detalle</strong>
               <label class="fila-unidad__n">Kilos por caja <input type="number" min="0" step="0.1" inputmode="decimal" value="${p.kilos_por_caja ?? ''}" data-campo="kilos_por_caja" placeholder="—" aria-label="Kilos por caja de ${esc(p.nombre)}"></label>
-              <label class="fila-unidad__n" title="Si el detalle se vende por bolsa cerrada (ej. 2,5 kg). Vacío = por kilo.">Kg por bolsa <input type="number" min="0" step="0.1" inputmode="decimal" value="${p.kilos_por_bolsa ?? ''}" data-campo="kilos_por_bolsa" placeholder="por kg" aria-label="Kilos por bolsa de ${esc(p.nombre)}"></label>
+              <label class="fila-unidad__n" title="Peso de UNA bolsa en kilos, si el detalle se vende por bolsa cerrada (ej. 2,5 kg; 150 g = 0.15). Vacío = por kilo.">Kg por bolsa <input type="number" min="0" step="0.01" inputmode="decimal" value="${p.kilos_por_bolsa ?? ''}" data-campo="kilos_por_bolsa" placeholder="por kg" aria-label="Kilos por bolsa de ${esc(p.nombre)}"></label>
             </td>
             <td data-calc="costo_u" class="calc" title="Costo de la caja ÷ kilos por caja">—</td>
             <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_kilo ?? ''}" data-campo="margen_kilo" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
