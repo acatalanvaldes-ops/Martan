@@ -34,6 +34,17 @@ function slugDe(s) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
 }
 
+// Número con hasta 3 decimales (kilos). Acepta coma decimal.
+function decimal(v, { nulo = false, positivo = false } = {}) {
+  if (v === null || v === undefined || v === '') {
+    if (nulo) return null;
+    throw new ErrorPublico('Revisa los valores numéricos.');
+  }
+  const n = Number(String(v).replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0 || (positivo && n === 0)) throw new ErrorPublico('Revisa los valores numéricos (stock y kilos).');
+  return Math.round(n * 1000) / 1000;
+}
+
 function porcentaje(v) {
   if (v === null || v === undefined || v === '') return null;
   const n = Number(String(v).replace(',', '.'));
@@ -57,11 +68,10 @@ function limpiarProducto(p) {
   const extra = {};
   if ('costo' in p) extra.costo = entero(p.costo, { nulo: true });
   if ('margen' in p) extra.margen = porcentaje(p.margen);
-  // Venta por unidad: unidades que trae la caja, formato y precio al detalle (con su margen).
-  if ('unidades_por_caja' in p) extra.unidades_por_caja = Math.max(1, entero(p.unidades_por_caja ?? 1, { min: 1 }));
-  if ('formato_unidad' in p) extra.formato_unidad = opcional(p.formato_unidad, 80);
-  if ('precio_unidad' in p) extra.precio_unidad = entero(p.precio_unidad, { nulo: true });
-  if ('margen_unidad' in p) extra.margen_unidad = porcentaje(p.margen_unidad);
+  // Venta por kilo (al detalle): kilos que trae la caja, precio por kilo y su margen.
+  if ('kilos_por_caja' in p) extra.kilos_por_caja = decimal(p.kilos_por_caja, { nulo: true, positivo: true });
+  if ('precio_kilo' in p) extra.precio_kilo = entero(p.precio_kilo, { nulo: true });
+  if ('margen_kilo' in p) extra.margen_kilo = porcentaje(p.margen_kilo);
   for (const [campo, max] of Object.entries(CAMPOS_FICHA)) {
     if (campo in p) extra[campo] = opcional(p[campo], max);
   }
@@ -74,7 +84,7 @@ function limpiarProducto(p) {
     formato: texto(p.formato, 80),
     precio: entero(p.precio),
     precio_anterior: entero(p.precio_anterior, { nulo: true }),
-    stock: entero(p.stock),
+    stock: decimal(p.stock ?? 0), // kilos (admite decimales) o cajas
     imagen_url: imagen || null,
     destacado: Boolean(p.destacado),
     activo: Boolean(p.activo),
@@ -90,8 +100,8 @@ async function conColumnas(fn) {
     const m = String(e.message);
     if (/PGRST204|42703|does not exist/.test(m)) {
       if (/costo|margen/.test(m)) throw new ErrorPublico('Faltan las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
-      if (/unidades_por_caja|precio_unidad|formato_unidad|margen_unidad|modo|unidades/.test(m)) {
-        throw new ErrorPublico('Falta aplicar la migración de venta por caja/unidad (se aplica sola en el próximo deploy).', 409);
+      if (/kilos_por_caja|precio_kilo|margen_kilo|modo|unidades/.test(m)) {
+        throw new ErrorPublico('Falta aplicar la migración de venta por caja/kilo (se aplica sola en el próximo deploy).', 409);
       }
       if (/imagenes|temporada|conservacion|preparacion|receta/.test(m)) {
         throw new ErrorPublico('Faltan las columnas de la ficha: ejecuta supabase/fichas.sql en Supabase.', 409);

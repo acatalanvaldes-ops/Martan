@@ -121,7 +121,7 @@
           lineas.forEach((l) => Carro.fijar(l.id, l.cantidad, l.modo));
           const nombre = s.nombre || lineas[0]?.nombre || 'Producto';
           const queda = s.disponible <= 0 ? 'agotado'
-            : s.unidades_por_caja > 1 ? `quedan ${s.disponible} unidades (${s.cajas} caja${s.cajas === 1 ? '' : 's'})` : `quedan ${s.disponible}`;
+            : s.kilos_por_caja ? `quedan ${s.disponible.toLocaleString('es-CL')} kg (${s.cajas} caja${s.cajas === 1 ? '' : 's'})` : `quedan ${s.disponible} caja${s.disponible === 1 ? '' : 's'}`;
           return `<li>${esc(nombre)}: ${queda}</li>`;
         }).join('');
         avisar(`Actualizamos tu carro porque cambió el stock:<ul style="margin:6px 0 0;padding-left:18px">${detalle}</ul>Revisa el resumen y vuelve a intentar.`);

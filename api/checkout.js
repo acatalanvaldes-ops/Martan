@@ -8,13 +8,13 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export default ruta(['POST'], async (req, res) => {
   const b = req.body || {};
 
-  // ---- Carro: cada línea es un producto vendido por caja o por unidad ----
+  // ---- Carro: cada línea es un producto vendido por caja (por mayor) o por kilo (al detalle) ----
   if (!Array.isArray(b.items) || b.items.length === 0) throw new ErrorPublico('Tu carro está vacío.');
   const lineas = new Map(); // "id:modo" → cantidad
   for (const it of b.items.slice(0, 60)) {
     const id = Number(it?.id);
     const cantidad = Number(it?.cantidad);
-    const modo = it?.modo === 'unidad' ? 'unidad' : 'caja';
+    const modo = it?.modo === 'kilo' ? 'kilo' : 'caja';
     if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(cantidad) || cantidad <= 0 || cantidad > 999) {
       throw new ErrorPublico('Hay un producto inválido en el carro.');
     }
@@ -38,41 +38,43 @@ export default ruta(['POST'], async (req, res) => {
   const e = b.entrega || {};
 
   // ---- Precios y stock desde la base de datos (nunca desde el navegador) ----
-  // El stock se cuenta en unidades: una caja descuenta "unidades_por_caja".
+  // El stock va en kilos si el producto tiene kilos_por_caja (una caja descuenta sus kilos); si no, en cajas.
   const ids = [...new Set([...lineas.keys()].map((k) => Number(k.split(':')[0])))];
   const [productos, conf] = await Promise.all([
-    sb(`productos?id=in.(${ids.join(',')})&activo=eq.true&select=id,nombre,formato,precio,stock,unidades_por_caja,precio_unidad,formato_unidad`),
+    sb(`productos?id=in.(${ids.join(',')})&activo=eq.true&select=id,nombre,formato,precio,stock,kilos_por_caja,precio_kilo`),
     sb('configuracion?id=eq.1&select=monto_minimo,despacho_gratis_desde'),
   ]);
   const config = conf[0] || {};
   const porId = new Map(productos.map((p) => [p.id, p]));
   const sinStock = [];
   const items = [];
-  const usadas = new Map(); // unidades pedidas por producto (sumando caja + unidad)
+  const usadas = new Map(); // stock pedido por producto (kilos o cajas, sumando caja + kilo)
+  const kg = (n) => Number(n).toLocaleString('es-CL', { maximumFractionDigits: 3 });
   let subtotal = 0;
   for (const [k, cantidad] of lineas) {
     const [idTxt, modo] = k.split(':');
     const id = Number(idTxt);
     const p = porId.get(id);
     if (!p) { sinStock.push({ id, modo, nombre: null, disponible: 0 }); continue; }
-    const porCaja = p.unidades_por_caja || 1;
-    if (modo === 'unidad' && !(porCaja > 1 && p.precio_unidad > 0)) {
+    const kilos = Number(p.kilos_por_caja) > 0 ? Number(p.kilos_por_caja) : null;
+    const porCaja = kilos || 1;
+    if (modo === 'kilo' && !(kilos > 1 && p.precio_kilo > 0)) {
       throw new ErrorPublico(`${p.nombre} solo se vende por caja.`);
     }
-    const precio = modo === 'unidad' ? p.precio_unidad : p.precio;
-    const unidades = cantidad * (modo === 'unidad' ? 1 : porCaja);
+    const precio = modo === 'kilo' ? p.precio_kilo : p.precio;
+    const unidades = cantidad * (modo === 'kilo' ? 1 : porCaja);
     usadas.set(id, (usadas.get(id) || 0) + unidades);
-    const formato = modo === 'unidad'
-      ? `Unidad${p.formato_unidad ? ` · ${p.formato_unidad}` : ''}`
-      : `Caja${porCaja > 1 ? ` de ${porCaja} unidades` : ''}${p.formato ? ` · ${p.formato}` : ''}`;
+    const formato = modo === 'kilo'
+      ? `${cantidad} kg · precio al detalle`
+      : `Caja${kilos ? ` de ${kg(kilos)} kg` : (p.formato ? ` · ${p.formato}` : '')} · precio por mayor`;
     items.push({ producto_id: id, nombre: p.nombre, formato, modo, unidades, precio_unitario: precio, cantidad, subtotal: precio * cantidad });
     subtotal += precio * cantidad;
   }
   for (const [id, unidades] of usadas) {
     const p = porId.get(id);
-    if (p.stock < unidades) {
-      const porCaja = p.unidades_por_caja || 1;
-      sinStock.push({ id, nombre: p.nombre, disponible: p.stock, cajas: Math.floor(p.stock / porCaja), unidades_por_caja: porCaja });
+    if (Number(p.stock) < unidades) {
+      const kilos = Number(p.kilos_por_caja) > 0 ? Number(p.kilos_por_caja) : null;
+      sinStock.push({ id, nombre: p.nombre, disponible: Number(p.stock), cajas: Math.floor(Number(p.stock) / (kilos || 1)), kilos_por_caja: kilos });
     }
   }
   if (sinStock.length) throw new ErrorPublico('Algunos productos ya no tienen stock suficiente.', 409, { sinStock });

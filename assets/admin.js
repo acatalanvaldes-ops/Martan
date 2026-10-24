@@ -148,7 +148,7 @@
             <td>${esc(p.cliente_nombre)}<br><a href="mailto:${esc(p.cliente_email)}">${esc(p.cliente_email)}</a><br><a href="tel:${esc(p.cliente_telefono)}">${esc(p.cliente_telefono)}</a>${p.cliente_rut ? `<br>${esc(p.cliente_rut)}` : ''}</td>
             <td>${esc(p.comuna)}<br>${esc(p.direccion)}${p.referencia ? `<br><small>${esc(p.referencia)}</small>` : ''}
               ${p.notas ? `<br><small><strong>Nota:</strong> ${esc(p.notas)}</small>` : ''}</td>
-            <td><ul class="detalle-items">${p.pedido_items.map((i) => `<li>${i.cantidad} × ${esc(i.nombre)} <span class="estado-pill" style="padding:1px 7px;font-size:.7rem">${i.modo === 'unidad' ? 'unidad' : 'caja'}</span></li>`).join('')}</ul></td>
+            <td><ul class="detalle-items">${p.pedido_items.map((i) => `<li>${i.cantidad} × ${esc(i.nombre)} <span class="estado-pill" style="padding:1px 7px;font-size:.7rem">${i.modo === 'kilo' ? 'por kilo' : i.modo === 'unidad' ? 'unidad' : 'caja'}</span></li>`).join('')}</ul></td>
             <td><strong>${clp(p.total)}</strong>${p.costo_despacho ? `<br><small>envío ${clp(p.costo_despacho)}</small>` : ''}</td>
             <td>
               <span class="estado-pill" data-e="${p.estado}">${ESTADOS[p.estado]}</span><br>
@@ -212,7 +212,7 @@
           <th>IVA<br><small>19%</small></th>
           <th>Precio final<br><small>con IVA</small></th>
           <th>Ganancia<br><small>por unidad</small></th>
-          <th>Stock<br><small>en unidades</small></th>
+          <th>Stock<br><small>kg (o cajas)</small></th>
           <th>Visible</th>
           <th></th>
         </tr></thead>
@@ -230,7 +230,7 @@
             <td data-calc="iva" class="calc">—</td>
             <td><div class="campo-pesos campo-pesos--final"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${precioInicial(p)}" data-campo="precio" placeholder="0" aria-label="Precio final de ${esc(p.nombre)}"></div></td>
             <td data-calc="ganancia" class="calc">—</td>
-            <td><input class="campo-stock" type="number" min="0" step="1" inputmode="numeric" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}"></td>
+            <td><input class="campo-stock" type="number" min="0" step="0.1" inputmode="numeric" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}"></td>
             <td style="text-align:center"><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="${esc(p.nombre)} visible en la tienda"></td>
             <td style="white-space:nowrap">
               <button class="btn btn--azul btn--chico" data-guardar="${p.id}" disabled>Guardar</button>
@@ -243,15 +243,14 @@
           <tr class="fila-unidad" data-fila-unidad="${p.id}">
             <td></td>
             <td class="fila-unidad__titulo">
-              <strong>↳ Por unidad</strong>
-              <label class="fila-unidad__n">Unid. por caja <input type="number" min="1" step="1" inputmode="numeric" value="${p.unidades_por_caja ?? 1}" data-campo="unidades_por_caja" aria-label="Unidades por caja de ${esc(p.nombre)}"></label>
-              <input class="fila-unidad__formato" maxlength="80" value="${esc(p.formato_unidad ?? '')}" data-campo="formato_unidad" placeholder="Formato unidad (ej. Bolsa 1 kg)" aria-label="Formato de la unidad de ${esc(p.nombre)}">
+              <strong>↳ Por kilo · al detalle</strong>
+              <label class="fila-unidad__n">Kilos por caja <input type="number" min="0" step="0.1" inputmode="decimal" value="${p.kilos_por_caja ?? ''}" data-campo="kilos_por_caja" placeholder="—" aria-label="Kilos por caja de ${esc(p.nombre)}"></label>
             </td>
-            <td data-calc="costo_u" class="calc" title="Costo de la caja ÷ unidades por caja">—</td>
-            <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_unidad ?? ''}" data-campo="margen_unidad" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
+            <td data-calc="costo_u" class="calc" title="Costo de la caja ÷ kilos por caja">—</td>
+            <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_kilo ?? ''}" data-campo="margen_kilo" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
             <td data-calc="neto_u" class="calc">—</td>
             <td data-calc="iva_u" class="calc">—</td>
-            <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${p.precio_unidad ?? ''}" data-campo="precio_unidad" placeholder="—" aria-label="Precio por unidad de ${esc(p.nombre)}"></div></td>
+            <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${p.precio_kilo ?? ''}" data-campo="precio_kilo" placeholder="—" aria-label="Precio por kilo de ${esc(p.nombre)}"></div></td>
             <td data-calc="ganancia_u" class="calc">—</td>
             <td data-calc="cajas" class="calc">—</td>
             <td colspan="2" class="fila-unidad__nota" data-nota-unidad></td>
@@ -482,50 +481,54 @@
     }
   }
 
-  // ---------- Precio por unidad (detalle) ----------
-  // Costo unitario = costo de la caja ÷ unidades por caja. El precio por unidad se calcula con su propio margen.
+  // ---------- Precio por kilo (al detalle) ----------
+  // Costo por kg = costo de la caja ÷ kilos por caja. El precio por kilo se calcula con su propio margen.
   const filasDe = (id) => ({
     fila: contenido.querySelector(`[data-fila="${id}"]`),
     sub: contenido.querySelector(`[data-fila-unidad="${id}"]`),
   });
+  const kgTxt = (n) => Number(n).toLocaleString('es-CL', { maximumFractionDigits: 3 });
 
   function calcularUnidad(id, origen) {
     const { fila, sub } = filasDe(id);
     if (!fila || !sub) return;
     const campo = (c) => sub.querySelector(`[data-campo="${c}"]`);
     const celda = (c) => sub.querySelector(`[data-calc="${c}"]`);
-    const n = Math.max(1, Math.floor(aNumero(campo('unidades_por_caja')) || 1));
+    const kilos = aNumero(campo('kilos_por_caja'));
     const costoCaja = aNumero(fila.querySelector('[data-campo="costo"]'));
-    const costoU = costoCaja > 0 ? costoCaja / n : null;
-    const margenU = aNumero(campo('margen_unidad'));
-    const habilitado = n > 1;
-    ['margen_unidad', 'precio_unidad', 'formato_unidad'].forEach((c) => { campo(c).disabled = !habilitado; });
+    const costoKg = costoCaja > 0 && kilos > 0 ? costoCaja / kilos : null;
+    const margenKg = aNumero(campo('margen_kilo'));
+    const habilitado = kilos > 1;
+    ['margen_kilo', 'precio_kilo'].forEach((c) => { campo(c).disabled = !habilitado; });
     sub.classList.toggle('fila-unidad--inactiva', !habilitado);
 
-    if (habilitado && ['costo', 'unidades_por_caja', 'margen_unidad'].includes(origen) && costoU > 0 && margenU !== null) {
-      campo('precio_unidad').value = redondear10(costoU * (1 + margenU / 100) * (1 + IVA));
+    if (habilitado && ['costo', 'kilos_por_caja', 'margen_kilo'].includes(origen) && costoKg > 0 && margenKg !== null) {
+      campo('precio_kilo').value = redondear10(costoKg * (1 + margenKg / 100) * (1 + IVA));
     }
-    const precioU = habilitado ? aNumero(campo('precio_unidad')) : null;
-    if (origen === 'precio_unidad' && costoU > 0 && precioU > 0) {
-      campo('margen_unidad').value = ((precioU / (1 + IVA) / costoU - 1) * 100).toFixed(1);
+    const precioKg = habilitado ? aNumero(campo('precio_kilo')) : null;
+    if (origen === 'precio_kilo' && costoKg > 0 && precioKg > 0) {
+      campo('margen_kilo').value = ((precioKg / (1 + IVA) / costoKg - 1) * 100).toFixed(1);
     }
 
-    celda('costo_u').textContent = habilitado && costoU ? clp(Math.round(costoU)) : '—';
-    if (precioU > 0) {
-      const neto = Math.round(precioU / (1 + IVA));
+    celda('costo_u').textContent = costoKg ? `${clp(Math.round(costoKg))}/kg` : '—';
+    if (precioKg > 0) {
+      const neto = Math.round(precioKg / (1 + IVA));
       celda('neto_u').textContent = clp(neto);
-      celda('iva_u').textContent = clp(precioU - neto);
-      const g = costoU ? Math.round(neto - costoU) : null;
-      celda('ganancia_u').textContent = g === null ? '—' : clp(g);
+      celda('iva_u').textContent = clp(precioKg - neto);
+      const g = costoKg ? Math.round(neto - costoKg) : null;
+      celda('ganancia_u').textContent = g === null ? '—' : `${clp(g)}/kg`;
       celda('ganancia_u').className = `calc ${g === null ? '' : g < 0 ? 'calc--negativo' : 'calc--positivo'}`;
     } else {
       ['neto_u', 'iva_u', 'ganancia_u'].forEach((c) => { celda(c).textContent = '—'; celda(c).className = 'calc'; });
     }
+    // Stock: en kilos si hay kilos por caja; si no, en cajas.
     const stock = aNumero(fila.querySelector('[data-campo="stock"]')) || 0;
-    celda('cajas').textContent = n > 1 ? `= ${Math.floor(stock / n)} caja${Math.floor(stock / n) === 1 ? '' : 's'}${stock % n ? ` + ${stock % n} u.` : ''}` : '';
-    sub.querySelector('[data-nota-unidad]').textContent = !habilitado
-      ? 'Indica cuántas unidades trae la caja para venderlo también por unidad.'
-      : precioU > 0 ? 'Se vende por caja y por unidad.' : 'Sin precio por unidad: se vende solo por caja.';
+    const cajas = kilos > 0 ? Math.floor(stock / kilos) : null;
+    celda('cajas').textContent = kilos > 0 ? `${kgTxt(stock)} kg = ${cajas} caja${cajas === 1 ? '' : 's'}` : `${kgTxt(stock)} caja${stock === 1 ? '' : 's'}`;
+    sub.querySelector('[data-nota-unidad]').textContent = !(kilos > 0)
+      ? 'Indica los kilos por caja: el stock se cuenta en kilos y se puede vender por kilo.'
+      : !habilitado ? 'Caja de 1 kg: se vende solo por caja.'
+        : precioKg > 0 ? 'Se vende por caja (por mayor) y por kilo (al detalle).' : 'Sin precio por kilo: se vende solo por caja.';
   }
 
   // Edición rápida: recalcula y habilita "Guardar" en la fila al cambiar cualquier campo.
@@ -566,12 +569,11 @@
     const sub = filasDe(p.id).sub;
     if (sub) {
       const u = (c) => sub.querySelector(`[data-campo="${c}"]`).value;
-      const n = Math.max(1, Math.floor(Number(u('unidades_por_caja')) || 1));
+      const kilos = Number(String(u('kilos_por_caja')).replace(',', '.'));
       Object.assign(datos, {
-        unidades_por_caja: n,
-        formato_unidad: u('formato_unidad'),
-        margen_unidad: n > 1 ? u('margen_unidad') : '',
-        precio_unidad: n > 1 && Number(u('precio_unidad')) > 0 ? Number(u('precio_unidad')) : null,
+        kilos_por_caja: kilos > 0 ? kilos : null,
+        margen_kilo: kilos > 1 ? u('margen_kilo') : '',
+        precio_kilo: kilos > 1 && Number(u('precio_kilo')) > 0 ? Number(u('precio_kilo')) : null,
       });
     }
     if (datos.activo && !(precio > 3)) {

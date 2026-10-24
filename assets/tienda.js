@@ -17,29 +17,33 @@
   }
 
   // ---------- Carro ----------
-  // ---------- Venta por caja (precio mayorista) o por unidad (precio detalle) ----------
-  // El stock viene en UNIDADES; una caja usa "unidades_por_caja" unidades.
+  // ---------- Venta por caja (precio por mayor) o por kilo (precio al detalle) ----------
+  // El stock viene en KILOS si el producto tiene kilos_por_caja; si no, en CAJAS.
+  const kg = (n) => Number(n).toLocaleString('es-CL', { maximumFractionDigits: 3 });
   const Venta = {
-    porCaja: (p) => Math.max(1, p.unidades_por_caja || 1),
-    vendeUnidad: (p) => Venta.porCaja(p) > 1 && p.precio_unidad > 0,
-    precio: (p, modo) => (modo === 'unidad' ? p.precio_unidad : p.precio),
-    unidadesDe: (p, modo) => (modo === 'unidad' ? 1 : Venta.porCaja(p)),
+    kilos: (p) => (Number(p.kilos_por_caja) > 0 ? Number(p.kilos_por_caja) : null),
+    // Lo que descuenta del stock una caja: sus kilos, o 1 caja si el producto no tiene kilos.
+    porCaja: (p) => Venta.kilos(p) || 1,
+    vendeKilo: (p) => Venta.kilos(p) > 1 && p.precio_kilo > 0,
+    precio: (p, modo) => (modo === 'kilo' ? p.precio_kilo : p.precio),
+    unidadesDe: (p, modo) => (modo === 'kilo' ? 1 : Venta.porCaja(p)),
+    kg,
     etiqueta(p, modo) {
-      if (modo === 'unidad') return p.formato_unidad ? `Unidad · ${p.formato_unidad}` : 'Unidad';
-      const n = Venta.porCaja(p);
-      return [n > 1 ? `Caja de ${n} unidades` : '', p.formato].filter(Boolean).join(' · ') || 'Caja';
+      if (modo === 'kilo') return 'Por kilo · precio al detalle';
+      const k = Venta.kilos(p);
+      return k ? `Caja de ${kg(k)} kg · precio por mayor` : `Caja${p.formato ? ` · ${p.formato}` : ''}`;
     },
-    // Ahorro por unidad al comprar por caja respecto del precio detalle.
+    // Cuánto más barato sale el kilo comprando la caja (por mayor) que al detalle.
     ahorro(p) {
-      if (!Venta.vendeUnidad(p)) return 0;
-      const porUnidadEnCaja = p.precio / Venta.porCaja(p);
-      return Math.max(0, Math.round((1 - porUnidadEnCaja / p.precio_unidad) * 100));
+      if (!Venta.vendeKilo(p)) return 0;
+      return Math.max(0, Math.round((1 - p.precio / Venta.kilos(p) / p.precio_kilo) * 100));
     },
   };
 
   let carro = leerLocal(CLAVE_CARRO, []);
   if (!Array.isArray(carro)) carro = [];
-  carro.forEach((i) => { if (i.modo !== 'unidad') i.modo = 'caja'; }); // carros antiguos: todo era por caja
+  carro = carro.filter((i) => i.modo !== 'unidad'); // la venta por unidad se reemplazó por venta por kilo
+  carro.forEach((i) => { if (i.modo !== 'kilo') i.modo = 'caja'; }); // carros antiguos: todo era por caja
   const oyentes = new Set();
   const linea = (id, modo = 'caja') => carro.find((i) => i.id === id && i.modo === modo);
 
@@ -91,7 +95,7 @@
       const quitados = [];
       carro = carro.filter((i) => {
         const p = porId.get(i.id);
-        if (!p || p.stock <= 0 || (i.modo === 'unidad' && !Venta.vendeUnidad(p))) { quitados.push(i.nombre); return false; }
+        if (!p || p.stock <= 0 || (i.modo === 'kilo' && !Venta.vendeKilo(p))) { quitados.push(i.nombre); return false; }
         Object.assign(i, {
           nombre: p.nombre, formato: Venta.etiqueta(p, i.modo), precio: Venta.precio(p, i.modo), imagen_url: p.imagen_url,
           categoria: p.categoria, stock: p.stock, unidadesPor: Venta.unidadesDe(p, i.modo),
@@ -230,7 +234,7 @@
             <strong>${clp(i.precio * i.cantidad)}</strong>
             <div class="cantidad">
               <button data-accion="menos" data-id="${i.id}" data-modo="${i.modo}" aria-label="Quitar uno">−</button>
-              <span>${i.cantidad}</span>
+              <span>${i.cantidad}${i.modo === 'kilo' ? ' kg' : ''}</span>
               <button data-accion="mas" data-id="${i.id}" data-modo="${i.modo}" aria-label="Agregar uno" ${i.cantidad >= Carro.tope(i.id, i.modo) ? 'disabled' : ''}>+</button>
             </div>
           </div>

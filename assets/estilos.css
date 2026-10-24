@@ -540,8 +540,10 @@ section[id] { scroll-margin-top: 84px; }
 .fila-unidad td { background: #f7fafb; border-top: 0; padding-top: 6px; padding-bottom: 10px; font-size: .85rem; }
 tr[data-fila] td { border-bottom: 0; }
 .fila-unidad__titulo strong { display: block; color: var(--turquesa-osc); font-size: .8rem; margin-bottom: 4px; }
-.fila-unidad__n { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--texto-suave); white-space: nowrap; }
-.fila-unidad__n input { width: 60px; }
+.fila-unidad__n { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--texto-suave); white-space: nowrap; }
+.fila-unidad__n input { width: 58px; }
 .fila-unidad__formato { margin-top: 6px; width: 170px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--borde); font-size: .8rem; }
-.fila-unidad__nota { color: var(--texto-suave); font-size: .76rem; max-width: 190px; line-height: 1.35; }
+.fila-unidad__nota { color: var(--texto-suave); font-size: .72rem; max-width: 160px; line-height: 1.3; }
 .fila-unidad--inactiva .campo-pct, .fila-unidad--inactiva .campo-pesos, .fila-unidad--inactiva .fila-unidad__formato { opacity: .45; }
+.ficha__nota-precio { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: #fff6e0; border-left: 3px solid var(--mostaza); font-size: .82rem; color: var(--texto); }
+.cantidad span { white-space: nowrap; padding: 0 4px; }

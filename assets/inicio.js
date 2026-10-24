@@ -17,17 +17,16 @@
   const parrafos = (t) => esc(t).split(/\n{2,}/).map((b) => `<p>${b.replace(/\n/g, '<br>')}</p>`).join('');
 
   // ---------- Tarjetas ----------
-  // Modalidad elegida por producto: "caja" (precio mayorista, por defecto) o "unidad" (precio detalle).
+  // Modalidad elegida por producto: "caja" (precio por mayor, por defecto) o "kilo" (precio al detalle).
   const modoSel = new Map();
-  const modoDe = (p) => (Venta.vendeUnidad(p) && modoSel.get(p.id) === 'unidad' ? 'unidad' : 'caja');
+  const modoDe = (p) => (Venta.vendeKilo(p) && modoSel.get(p.id) === 'kilo' ? 'kilo' : 'caja');
   const disponibles = (p, modo) => Math.floor(p.stock / Venta.unidadesDe(p, modo));
 
   function insignias(p) {
     const lista = [];
     const cajas = disponibles(p, 'caja');
     if (p.stock <= 0) lista.push('<span class="insignia insignia--agotado">Agotado</span>');
-    else if (Venta.porCaja(p) > 1 && cajas <= 3) lista.push(`<span class="insignia insignia--pocas">${cajas ? `¡Quedan ${cajas} caja${cajas === 1 ? '' : 's'}!` : 'Solo por unidad'}</span>`);
-    else if (Venta.porCaja(p) === 1 && p.stock <= 5) lista.push(`<span class="insignia insignia--pocas">¡Quedan ${p.stock}!</span>`);
+    else if (cajas <= 3) lista.push(`<span class="insignia insignia--pocas">${cajas ? `¡Quedan ${cajas} caja${cajas === 1 ? '' : 's'}!` : 'Solo por kilo'}</span>`);
     if (p.precio_anterior && p.precio_anterior > p.precio) {
       lista.push(`<span class="insignia insignia--oferta">-${Math.round((1 - p.precio / p.precio_anterior) * 100)}%</span>`);
     }
@@ -42,18 +41,18 @@
     return `
       <div class="cantidad">
         <button data-menos="${p.id}" data-modo="${modo}" aria-label="Quitar uno">−</button>
-        <span>${n}</span>
+        <span>${n}${modo === 'kilo' ? ' kg' : ''}</span>
         <button data-mas="${p.id}" data-modo="${modo}" aria-label="Agregar uno" ${n >= Carro.tope(p.id, modo) ? 'disabled' : ''}>+</button>
       </div>`;
   }
 
-  // Selector Caja / Unidad (solo si el producto se vende también por unidad).
+  // Selector Caja / Kilo (solo si el producto se vende también por kilo).
   function selectorModo(p, modo) {
-    if (!Venta.vendeUnidad(p)) return '';
+    if (!Venta.vendeKilo(p)) return '';
     return `
-      <div class="modos" role="group" aria-label="Comprar por caja o por unidad">
-        <button data-modo-sel="caja" data-id="${p.id}" aria-pressed="${modo === 'caja'}">Caja ×${Venta.porCaja(p)}<small>Por mayor</small></button>
-        <button data-modo-sel="unidad" data-id="${p.id}" aria-pressed="${modo === 'unidad'}">Unidad<small>Al detalle</small></button>
+      <div class="modos" role="group" aria-label="Comprar por caja (por mayor) o por kilo (al detalle)">
+        <button data-modo-sel="caja" data-id="${p.id}" aria-pressed="${modo === 'caja'}">Caja ${Venta.kg(Venta.kilos(p))} kg<small>Por mayor</small></button>
+        <button data-modo-sel="kilo" data-id="${p.id}" aria-pressed="${modo === 'kilo'}">Por kilo<small>Al detalle</small></button>
       </div>`;
   }
 
@@ -61,9 +60,13 @@
     const precio = Venta.precio(p, modo);
     const tachado = modo === 'caja' && p.precio_anterior > p.precio ? `<s>${clp(p.precio_anterior)}</s>` : '';
     let detalle = '';
-    if (modo === 'caja' && Venta.vendeUnidad(p)) {
+    if (modo === 'caja' && Venta.vendeKilo(p)) {
       const ah = Venta.ahorro(p);
-      detalle = `<span class="precio__detalle">${clp(p.precio / Venta.porCaja(p))} c/u${ah > 0 ? ` · <b>ahorras ${ah}%</b>` : ''}</span>`;
+      detalle = `<span class="precio__detalle">${clp(p.precio / Venta.kilos(p))} el kg por mayor${ah > 0 ? ` · <b>ahorras ${ah}%</b>` : ''}</span>`;
+    } else if (modo === 'kilo') {
+      detalle = '<span class="precio__detalle">el kg, al detalle</span>';
+    } else {
+      detalle = '<span class="precio__detalle">precio por mayor</span>';
     }
     return `<div class="precio">${tachado}${clp(precio)}${detalle}</div>`;
   }
@@ -188,7 +191,7 @@
     const p = productos.find((x) => x.id === id);
     if (!p) return;
     const modo = b.dataset.modo || 'caja';
-    if (b.dataset.agregar) { Carro.agregar(p, 1, modo); toast(`${p.nombre} (${modo === 'unidad' ? 'unidad' : 'caja'}) agregado al carro`); }
+    if (b.dataset.agregar) { Carro.agregar(p, 1, modo); toast(`${p.nombre} (${modo === 'kilo' ? 'por kilo' : 'caja'}) agregado al carro`); }
     if (b.dataset.mas) Carro.fijar(id, Carro.cantidad(id, modo) + 1, modo);
     if (b.dataset.menos) Carro.fijar(id, Carro.cantidad(id, modo) - 1, modo);
   });
@@ -228,7 +231,7 @@
     return `<section class="ficha__seccion${clase}"${marca}><h3>${titulo}</h3>${parrafos(contenido)}</section>`;
   }
 
-  // Bloque de compra de la ficha: selector Caja/Unidad, precio y botón.
+  // Bloque de compra de la ficha: selector Caja/Kilo, precio y botón.
   function compraFicha(p) {
     const modo = modoDe(p);
     return `
@@ -237,10 +240,13 @@
         <div data-accion-de="${p.id}" data-clase="" data-modo="${modo}">${accion(p, '', modo)}</div>
       </div>
       ${selectorModo(p, modo)}
-      <p class="ficha__modo-texto">${esc(Venta.etiqueta(p, modo))}</p>`;
+      <p class="ficha__modo-texto">${esc(Venta.etiqueta(p, modo))}</p>
+      <p class="ficha__nota-precio">${Venta.vendeKilo(p)
+        ? '<strong>Valor caja:</strong> precio por mayor. <strong>Valor por kilo:</strong> precio al detalle.'
+        : '<strong>Valor caja:</strong> precio por mayor.'}</p>`;
   }
 
-  // Cambio Caja ↔ Unidad: repinta la tarjeta y, si está abierta, la ficha.
+  // Cambio Caja ↔ Kilo: repinta la tarjeta y, si está abierta, la ficha.
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-modo-sel]');
     if (!b) return;
@@ -266,11 +272,11 @@
     ficha.classList.toggle('ficha--una-foto', fotos.length <= 1);
 
     const detalles = [
-      ['Formato', Venta.etiqueta(p, 'caja')],
-      ['Venta', Venta.vendeUnidad(p) ? `Por caja (mayor) o por unidad (detalle)` : 'Por caja'],
+      ['Formato', Venta.kilos(p) ? `Caja de ${Venta.kg(Venta.kilos(p))} kg${p.formato ? ` · ${p.formato}` : ''}` : p.formato],
+      ['Venta', Venta.vendeKilo(p) ? 'Por caja (por mayor) o por kilo (al detalle)' : 'Por caja'],
       ['Categoría', p.categoria],
       ['Temporada', p.temporada],
-      ['Disponibilidad', p.stock <= 0 ? 'Agotado por ahora' : p.stock <= 5 ? `Últimas ${p.stock} unidades` : 'En stock'],
+      ['Disponibilidad', p.stock <= 0 ? 'Agotado por ahora' : disponibles(p, 'caja') <= 3 ? 'Pocas unidades' : 'En stock'],
     ].filter(([, v]) => v);
 
     info.innerHTML = `
