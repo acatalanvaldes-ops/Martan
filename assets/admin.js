@@ -213,7 +213,8 @@
     contenido.innerHTML = `
       <div class="aviso" style="margin-bottom:12px">
         <strong>Cómo cargar precios:</strong> escribe el <strong>costo neto</strong> (sin IVA) y el <strong>% de margen</strong>:
-        el <strong>precio final con IVA</strong> se calcula solo (redondeado a $10). También puedes escribir el precio final y el margen se calcula al revés.
+        el <strong>precio final con IVA</strong> se calcula solo (redondeado a $10), sumando la <strong>comisión del cobro con tarjeta</strong>
+        (Mercado Pago, 3,19% por defecto, calculada sobre el neto antes del IVA). La ganancia ya descuenta la comisión. También puedes escribir el precio final y el margen se calcula al revés.
         Después ingresa el stock, marca <strong>Visible</strong> y presiona <strong>Guardar</strong>.
         ${ocultos ? `<br>${ocultos} producto(s) oculto(s) en la tienda.` : ''}
       </div>
@@ -223,17 +224,18 @@
           <th>Producto</th>
           <th>Costo neto<br><small>sin IVA</small></th>
           <th>Margen<br><small>% sobre costo</small></th>
+          <th class="col-comision">Comisión tarjeta<br><small>% sobre neto</small></th>
           <th>Precio neto</th>
           <th>IVA<br><small>19%</small></th>
           <th>Precio final<br><small>con IVA</small></th>
-          <th>Ganancia<br><small>por unidad</small></th>
+          <th>Ganancia<br><small>después de comisión</small></th>
           <th>Stock<br><small>kg (o cajas)</small></th>
           <th>Visible</th>
           <th></th>
         </tr></thead>
         <tbody>${agrupados.map((p) => {
           const cabecera = p.categoria !== categoriaActual
-            ? `<tr class="fila-categoria"><td colspan="11">${esc(p.categoria)}</td></tr>` : '';
+            ? `<tr class="fila-categoria"><td colspan="12">${esc(p.categoria)}</td></tr>` : '';
           categoriaActual = p.categoria;
           return `${cabecera}
           <tr data-fila="${p.id}">
@@ -241,6 +243,7 @@
             <td data-nombre style="${p.activo ? '' : 'opacity:.6'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
             <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" value="${p.costo ?? ''}" data-campo="costo" placeholder="0" aria-label="Costo neto de ${esc(p.nombre)}"></div></td>
             <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen ?? ''}" data-campo="margen" placeholder="0" aria-label="Margen de ${esc(p.nombre)}"><span>%</span></div></td>
+            <td class="col-comision"><div class="campo-pct"><input type="number" min="0" max="49" step="0.01" inputmode="decimal" value="${p.comision ?? 3.19}" data-campo="comision" placeholder="3.19" aria-label="Comisión tarjeta de ${esc(p.nombre)}"><span>%</span></div><small data-calc="comision" class="calc calc--comision">—</small></td>
             <td data-calc="neto" class="calc">—</td>
             <td data-calc="iva" class="calc">—</td>
             <td><div class="campo-pesos campo-pesos--final"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${precioInicial(p)}" data-campo="precio" placeholder="0" aria-label="Precio final de ${esc(p.nombre)}"></div></td>
@@ -264,6 +267,7 @@
             </td>
             <td data-calc="costo_u" class="calc" title="Costo de la caja ÷ kilos por caja">—</td>
             <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_kilo ?? ''}" data-campo="margen_kilo" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
+            <td class="col-comision"><small data-calc="comision_u" class="calc calc--comision" title="Misma comisión del producto">—</small></td>
             <td data-calc="neto_u" class="calc">—</td>
             <td data-calc="iva_u" class="calc">—</td>
             <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${p.precio_kilo ?? ''}" data-campo="precio_kilo" placeholder="—" aria-label="Precio por kilo de ${esc(p.nombre)}"></div></td>
@@ -464,28 +468,36 @@
     return v === '' ? null : Number(v);
   };
   const redondear10 = (n) => Math.round(n / 10) * 10;
+  // Comisión del cobro con tarjeta (fracción, ej. 0,0319), sobre el precio neto antes del IVA.
+  const comisionDe = (fila) => {
+    const c = aNumero(fila.querySelector('[data-campo="comision"]'));
+    return (c === null ? 3.19 : c) / 100;
+  };
 
   // origen: campo que cambió ('costo' | 'margen' | 'precio'), o nada para solo mostrar el desglose.
   function calcular(fila, origen) {
     const campo = (c) => fila.querySelector(`[data-campo="${c}"]`);
     const costo = aNumero(campo('costo'));
     const margen = aNumero(campo('margen'));
+    const com = comisionDe(fila);
 
-    if ((origen === 'costo' || origen === 'margen') && costo > 0 && margen !== null) {
-      campo('precio').value = redondear10(costo * (1 + margen / 100) * (1 + IVA));
+    if (['costo', 'margen', 'comision'].includes(origen) && costo > 0 && margen !== null) {
+      campo('precio').value = redondear10(costo * (1 + margen / 100) * (1 + com) * (1 + IVA));
     }
     const precio = aNumero(campo('precio'));
     if (origen === 'precio' && costo > 0 && precio > 0) {
-      campo('margen').value = ((precio / (1 + IVA) / costo - 1) * 100).toFixed(1);
+      campo('margen').value = ((precio / (1 + IVA) / (1 + com) / costo - 1) * 100).toFixed(1);
     }
 
     const celda = (c) => fila.querySelector(`[data-calc="${c}"]`);
     if (precio > 0) {
       const neto = Math.round(precio / (1 + IVA));
+      const comision = Math.round(neto - neto / (1 + com));
+      celda('comision').textContent = `− ${clp(comision)}`;
       celda('neto').textContent = clp(neto);
       celda('iva').textContent = clp(precio - neto);
       if (costo > 0) {
-        const ganancia = neto - costo;
+        const ganancia = neto - comision - costo;
         celda('ganancia').textContent = clp(ganancia);
         celda('ganancia').className = `calc ${ganancia < 0 ? 'calc--negativo' : 'calc--positivo'}`;
       } else {
@@ -494,6 +506,7 @@
       }
     } else {
       ['neto', 'iva', 'ganancia'].forEach((c) => { celda(c).textContent = '—'; celda(c).className = 'calc'; });
+      celda('comision').textContent = '—';
     }
   }
 
@@ -514,28 +527,32 @@
     const costoCaja = aNumero(fila.querySelector('[data-campo="costo"]'));
     const costoKg = costoCaja > 0 && kilos > 0 ? costoCaja / kilos : null;
     const margenKg = aNumero(campo('margen_kilo'));
+    const com = comisionDe(fila);
     const habilitado = kilos > 1;
     ['margen_kilo', 'precio_kilo'].forEach((c) => { campo(c).disabled = !habilitado; });
     sub.classList.toggle('fila-unidad--inactiva', !habilitado);
 
-    if (habilitado && ['costo', 'kilos_por_caja', 'margen_kilo'].includes(origen) && costoKg > 0 && margenKg !== null) {
-      campo('precio_kilo').value = redondear10(costoKg * (1 + margenKg / 100) * (1 + IVA));
+    if (habilitado && ['costo', 'kilos_por_caja', 'margen_kilo', 'comision'].includes(origen) && costoKg > 0 && margenKg !== null) {
+      campo('precio_kilo').value = redondear10(costoKg * (1 + margenKg / 100) * (1 + com) * (1 + IVA));
     }
     const precioKg = habilitado ? aNumero(campo('precio_kilo')) : null;
     if (origen === 'precio_kilo' && costoKg > 0 && precioKg > 0) {
-      campo('margen_kilo').value = ((precioKg / (1 + IVA) / costoKg - 1) * 100).toFixed(1);
+      campo('margen_kilo').value = ((precioKg / (1 + IVA) / (1 + com) / costoKg - 1) * 100).toFixed(1);
     }
 
     celda('costo_u').textContent = costoKg ? `${clp(Math.round(costoKg))}/kg` : '—';
     if (precioKg > 0) {
       const neto = Math.round(precioKg / (1 + IVA));
+      const comision = Math.round(neto - neto / (1 + com));
+      celda('comision_u').textContent = `− ${clp(comision)}/kg`;
       celda('neto_u').textContent = clp(neto);
       celda('iva_u').textContent = clp(precioKg - neto);
-      const g = costoKg ? Math.round(neto - costoKg) : null;
+      const g = costoKg ? Math.round(neto - comision - costoKg) : null;
       celda('ganancia_u').textContent = g === null ? '—' : `${clp(g)}/kg`;
       celda('ganancia_u').className = `calc ${g === null ? '' : g < 0 ? 'calc--negativo' : 'calc--positivo'}`;
     } else {
       ['neto_u', 'iva_u', 'ganancia_u'].forEach((c) => { celda(c).textContent = '—'; celda(c).className = 'calc'; });
+      celda('comision_u').textContent = '—';
     }
     // Stock: en kilos si hay kilos por caja; si no, en cajas.
     const stock = aNumero(fila.querySelector('[data-campo="stock"]')) || 0;
@@ -557,7 +574,7 @@
     if (!contenedor || !c) return;
     const id = Number(contenedor.dataset.fila || contenedor.dataset.filaUnidad);
     const { fila } = filasDe(id);
-    if (['costo', 'margen', 'precio'].includes(c)) calcular(fila, c);
+    if (['costo', 'margen', 'comision', 'precio'].includes(c)) calcular(fila, c);
     calcularUnidad(id, c);
     fila.querySelector('[data-guardar]').disabled = false;
   });
@@ -581,6 +598,7 @@
       ...p,
       costo: valor('costo').value,
       margen: valor('margen').value,
+      comision: valor('comision').value,
       precio: precio > 3 ? precio : p.precio, // sin precio real se mantiene el marcador (producto oculto)
       stock: valor('stock').value || 0,
       activo: valor('activo').checked,

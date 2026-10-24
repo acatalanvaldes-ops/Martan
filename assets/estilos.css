@@ -484,6 +484,11 @@ dialog form { padding: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; 
 .calc { color: var(--texto-suave); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .calc--positivo { color: var(--verde); font-weight: 700; }
 .calc--negativo { color: var(--rojo); font-weight: 700; }
+/* Comisión del cobro con tarjeta: columna destacada en mostaza para tenerla presente al fijar precios */
+.tabla-precios .col-comision { background: rgba(233, 154, 0, .1); border-left: 2px solid var(--mostaza); border-right: 2px solid var(--mostaza); }
+.tabla-precios th.col-comision { background: rgba(233, 154, 0, .22); }
+.col-comision .campo-pct input { width: 74px; border-color: var(--mostaza); }
+.calc--comision { display: block; margin-top: 4px; color: var(--mostaza-osc); font-weight: 700; }
 .foto-admin {
   display: grid; place-items: center; width: 56px; height: 56px; padding: 0; border-radius: 10px; overflow: hidden;
   border: 1px solid var(--borde); background: var(--hielo-100); cursor: pointer;

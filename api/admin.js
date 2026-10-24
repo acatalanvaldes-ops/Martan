@@ -73,6 +73,12 @@ function limpiarProducto(p) {
   if ('precio_kilo' in p) extra.precio_kilo = entero(p.precio_kilo, { nulo: true });
   if ('kilos_por_bolsa' in p) extra.kilos_por_bolsa = decimal(p.kilos_por_bolsa, { nulo: true, positivo: true });
   if ('margen_kilo' in p) extra.margen_kilo = porcentaje(p.margen_kilo);
+  // Comisión del cobro con tarjeta, en % sobre el precio neto (vacío = 3,19%).
+  if ('comision' in p) {
+    const c = p.comision === '' || p.comision == null ? 3.19 : Number(String(p.comision).replace(',', '.'));
+    if (!Number.isFinite(c) || c < 0 || c >= 50) throw new ErrorPublico('Revisa el porcentaje de comisión (entre 0 y 50).');
+    extra.comision = Math.round(c * 100) / 100;
+  }
   // Error típico: escribir la cantidad de bolsas (ej. 40) en vez del peso de cada bolsa (0,15 kg).
   if (extra.kilos_por_bolsa && extra.kilos_por_caja && extra.kilos_por_bolsa > extra.kilos_por_caja) {
     throw new ErrorPublico(`«Kg por bolsa» es el peso de una bolsa en kilos (ej. 150 g = 0.15), no la cantidad de bolsas. No puede ser mayor que los kilos por caja (${extra.kilos_por_caja}).`);
@@ -105,7 +111,7 @@ async function conColumnas(fn) {
     const m = String(e.message);
     if (/PGRST204|42703|does not exist/.test(m)) {
       if (/costo|margen/.test(m)) throw new ErrorPublico('Faltan las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
-      if (/kilos_por_caja|precio_kilo|margen_kilo|kilos_por_bolsa|modo|unidades/.test(m)) {
+      if (/kilos_por_caja|precio_kilo|margen_kilo|kilos_por_bolsa|comision|modo|unidades/.test(m)) {
         throw new ErrorPublico('Falta aplicar la migración de venta por caja/kilo (se aplica sola en el próximo deploy).', 409);
       }
       if (/imagenes|temporada|conservacion|preparacion|receta/.test(m)) {
