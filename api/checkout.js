@@ -41,7 +41,7 @@ export default ruta(['POST'], async (req, res) => {
   // El stock va en kilos si el producto tiene kilos_por_caja (una caja descuenta sus kilos); si no, en cajas.
   const ids = [...new Set([...lineas.keys()].map((k) => Number(k.split(':')[0])))];
   const [productos, conf] = await Promise.all([
-    sb(`productos?id=in.(${ids.join(',')})&activo=eq.true&select=id,nombre,formato,precio,stock,kilos_por_caja,precio_kilo`),
+    sb(`productos?id=in.(${ids.join(',')})&activo=eq.true&select=id,nombre,formato,precio,stock,kilos_por_caja,precio_kilo,kilos_por_bolsa`),
     sb('configuracion?id=eq.1&select=monto_minimo,despacho_gratis_desde'),
   ]);
   const config = conf[0] || {};
@@ -61,11 +61,13 @@ export default ruta(['POST'], async (req, res) => {
     if (modo === 'kilo' && !(kilos > 1 && p.precio_kilo > 0)) {
       throw new ErrorPublico(`${p.nombre} solo se vende por caja.`);
     }
-    const precio = modo === 'kilo' ? p.precio_kilo : p.precio;
-    const unidades = cantidad * (modo === 'kilo' ? 1 : porCaja);
+    // Detalle por bolsa cerrada: precio = precio por kilo × kilos de la bolsa (redondeado a $10), igual que en la tienda.
+    const bolsa = Number(p.kilos_por_bolsa) > 0 ? Number(p.kilos_por_bolsa) : null;
+    const precio = modo !== 'kilo' ? p.precio : bolsa ? Math.round((p.precio_kilo * bolsa) / 10) * 10 : p.precio_kilo;
+    const unidades = Math.round(cantidad * (modo === 'kilo' ? bolsa || 1 : porCaja) * 1000) / 1000;
     usadas.set(id, (usadas.get(id) || 0) + unidades);
     const formato = modo === 'kilo'
-      ? `${cantidad} kg · precio al detalle`
+      ? (bolsa ? `Bolsa ${bolsa < 1 ? `${Math.round(bolsa * 1000)} g` : `${kg(bolsa)} kg`} (${kg(unidades)} kg en total) · precio al detalle` : `${cantidad} kg · precio al detalle`)
       : `Caja${kilos ? ` de ${kg(kilos)} kg` : (p.formato ? ` · ${p.formato}` : '')} · precio por mayor`;
     items.push({ producto_id: id, nombre: p.nombre, formato, modo, unidades, precio_unitario: precio, cantidad, subtotal: precio * cantidad });
     subtotal += precio * cantidad;

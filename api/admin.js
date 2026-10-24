@@ -71,6 +71,7 @@ function limpiarProducto(p) {
   // Venta por kilo (al detalle): kilos que trae la caja, precio por kilo y su margen.
   if ('kilos_por_caja' in p) extra.kilos_por_caja = decimal(p.kilos_por_caja, { nulo: true, positivo: true });
   if ('precio_kilo' in p) extra.precio_kilo = entero(p.precio_kilo, { nulo: true });
+  if ('kilos_por_bolsa' in p) extra.kilos_por_bolsa = decimal(p.kilos_por_bolsa, { nulo: true, positivo: true });
   if ('margen_kilo' in p) extra.margen_kilo = porcentaje(p.margen_kilo);
   for (const [campo, max] of Object.entries(CAMPOS_FICHA)) {
     if (campo in p) extra[campo] = opcional(p[campo], max);
@@ -100,7 +101,7 @@ async function conColumnas(fn) {
     const m = String(e.message);
     if (/PGRST204|42703|does not exist/.test(m)) {
       if (/costo|margen/.test(m)) throw new ErrorPublico('Faltan las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
-      if (/kilos_por_caja|precio_kilo|margen_kilo|modo|unidades/.test(m)) {
+      if (/kilos_por_caja|precio_kilo|margen_kilo|kilos_por_bolsa|modo|unidades/.test(m)) {
         throw new ErrorPublico('Falta aplicar la migración de venta por caja/kilo (se aplica sola en el próximo deploy).', 409);
       }
       if (/imagenes|temporada|conservacion|preparacion|receta/.test(m)) {

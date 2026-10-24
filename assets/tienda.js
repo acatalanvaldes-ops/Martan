@@ -25,11 +25,20 @@
     // Lo que descuenta del stock una caja: sus kilos, o 1 caja si el producto no tiene kilos.
     porCaja: (p) => Venta.kilos(p) || 1,
     vendeKilo: (p) => Venta.kilos(p) > 1 && p.precio_kilo > 0,
-    precio: (p, modo) => (modo === 'kilo' ? p.precio_kilo : p.precio),
-    unidadesDe: (p, modo) => (modo === 'kilo' ? 1 : Venta.porCaja(p)),
+    // Detalle por bolsa cerrada (ej. papas en bolsas de 2,5 kg): se vende por bolsa a precio detalle por kilo.
+    bolsa: (p) => (Number(p.kilos_por_bolsa) > 0 ? Number(p.kilos_por_bolsa) : null),
+    precio: (p, modo) => {
+      if (modo !== 'kilo') return p.precio;
+      const b = Venta.bolsa(p);
+      return b ? Math.round((p.precio_kilo * b) / 10) * 10 : p.precio_kilo;
+    },
+    unidadesDe: (p, modo) => (modo === 'kilo' ? Venta.bolsa(p) || 1 : Venta.porCaja(p)),
+    // Peso legible: 2,5 kg · 200 g
+    peso: (n) => (n < 1 ? `${Math.round(n * 1000)} g` : `${kg(n)} kg`),
+    nombreDetalle: (p) => (Venta.bolsa(p) ? `Bolsa ${Venta.peso(Venta.bolsa(p))}` : 'Por kilo'),
     kg,
     etiqueta(p, modo) {
-      if (modo === 'kilo') return 'Por kilo';
+      if (modo === 'kilo') return Venta.nombreDetalle(p);
       const k = Venta.kilos(p);
       return k ? `Caja de ${kg(k)} kg` : `Caja${p.formato ? ` · ${p.formato}` : ''}`;
     },
@@ -234,7 +243,7 @@
             <strong>${clp(i.precio * i.cantidad)}</strong>
             <div class="cantidad">
               <button data-accion="menos" data-id="${i.id}" data-modo="${i.modo}" aria-label="Quitar uno">−</button>
-              <span>${i.cantidad}${i.modo === 'kilo' ? ' kg' : ''}</span>
+              <span>${i.cantidad}${i.modo === 'kilo' && i.unidadesPor === 1 ? ' kg' : ''}</span>
               <button data-accion="mas" data-id="${i.id}" data-modo="${i.modo}" aria-label="Agregar uno" ${i.cantidad >= Carro.tope(i.id, i.modo) ? 'disabled' : ''}>+</button>
             </div>
           </div>

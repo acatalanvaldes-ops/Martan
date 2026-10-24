@@ -245,6 +245,7 @@
             <td class="fila-unidad__titulo">
               <strong>↳ Por kilo · al detalle</strong>
               <label class="fila-unidad__n">Kilos por caja <input type="number" min="0" step="0.1" inputmode="decimal" value="${p.kilos_por_caja ?? ''}" data-campo="kilos_por_caja" placeholder="—" aria-label="Kilos por caja de ${esc(p.nombre)}"></label>
+              <label class="fila-unidad__n" title="Si el detalle se vende por bolsa cerrada (ej. 2,5 kg). Vacío = por kilo.">Kg por bolsa <input type="number" min="0" step="0.1" inputmode="decimal" value="${p.kilos_por_bolsa ?? ''}" data-campo="kilos_por_bolsa" placeholder="por kg" aria-label="Kilos por bolsa de ${esc(p.nombre)}"></label>
             </td>
             <td data-calc="costo_u" class="calc" title="Costo de la caja ÷ kilos por caja">—</td>
             <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_kilo ?? ''}" data-campo="margen_kilo" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
@@ -528,7 +529,10 @@
     sub.querySelector('[data-nota-unidad]').textContent = !(kilos > 0)
       ? 'Indica los kilos por caja: el stock se cuenta en kilos y se puede vender por kilo.'
       : !habilitado ? '⚠ Caja de 1 kg: si la caja trae más kilos, corrígelos aquí para habilitar el precio por kilo.'
-        : precioKg > 0 ? 'Se vende por caja (por mayor) y por kilo (al detalle).' : 'Sin precio por kilo: se vende solo por caja.';
+        : !(precioKg > 0) ? 'Sin precio por kilo: se vende solo por caja.'
+          : (() => { const b = aNumero(campo('kilos_por_bolsa')); return b > 0
+            ? `Detalle por bolsa de ${b < 1 ? `${Math.round(b * 1000)} g` : `${kgTxt(b)} kg`}: ${clp(redondear10(precioKg * b))} c/u.`
+            : 'Se vende por caja (por mayor) y por kilo (al detalle).'; })();
   }
 
   // Edición rápida: recalcula y habilita "Guardar" en la fila al cambiar cualquier campo.
@@ -574,6 +578,7 @@
         kilos_por_caja: kilos > 0 ? kilos : null,
         margen_kilo: kilos > 1 ? u('margen_kilo') : '',
         precio_kilo: kilos > 1 && Number(u('precio_kilo')) > 0 ? Number(u('precio_kilo')) : null,
+        kilos_por_bolsa: Number(String(u('kilos_por_bolsa')).replace(',', '.')) > 0 ? Number(String(u('kilos_por_bolsa')).replace(',', '.')) : null,
       });
     }
     if (datos.activo && !(precio > 3)) {
