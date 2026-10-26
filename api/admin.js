@@ -86,6 +86,8 @@ function limpiarProducto(p) {
   for (const [campo, max] of Object.entries(CAMPOS_FICHA)) {
     if (campo in p) extra[campo] = opcional(p[campo], max);
   }
+  // Subcategoría opcional (ej. Vegetales → Kilo / Individual).
+  if ('subcategoria' in p) extra.subcategoria = texto(p.subcategoria, 60) || null;
   return {
     ...extra,
     nombre,
@@ -111,7 +113,7 @@ async function conColumnas(fn) {
     const m = String(e.message);
     if (/PGRST204|42703|does not exist/.test(m)) {
       if (/costo|margen/.test(m)) throw new ErrorPublico('Faltan las columnas de costo y margen: ejecuta supabase/costos.sql en Supabase.', 409);
-      if (/kilos_por_caja|precio_kilo|margen_kilo|kilos_por_bolsa|comision|modo|unidades/.test(m)) {
+      if (/kilos_por_caja|precio_kilo|margen_kilo|kilos_por_bolsa|comision|subcategoria|modo|unidades/.test(m)) {
         throw new ErrorPublico('Falta aplicar la migración de venta por caja/kilo (se aplica sola en el próximo deploy).', 409);
       }
       if (/imagenes|temporada|conservacion|preparacion|receta/.test(m)) {

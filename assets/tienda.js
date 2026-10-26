@@ -287,6 +287,22 @@
   // Botón flotante de WhatsApp (todas las páginas de la tienda, menos el panel de administración).
   const ICONO_WSP = '<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3C8.86 3 3.02 8.83 3.02 16.01c0 2.3.6 4.54 1.75 6.52L3 29l6.64-1.74a13 13 0 0 0 6.4 1.66h.01c7.18 0 13.02-5.84 13.02-13.02 0-3.48-1.36-6.75-3.82-9.2A12.93 12.93 0 0 0 16.04 3Zm0 23.73h-.01a10.8 10.8 0 0 1-5.5-1.5l-.4-.24-3.94 1.03 1.05-3.84-.26-.4a10.74 10.74 0 0 1-1.66-5.77c0-5.97 4.86-10.83 10.84-10.83 2.89 0 5.61 1.13 7.66 3.18a10.76 10.76 0 0 1 3.17 7.66c0 5.97-4.86 10.82-10.83 10.82Zm5.94-8.1c-.33-.16-1.93-.95-2.23-1.06-.3-.11-.52-.16-.73.17-.22.32-.84 1.05-1.03 1.27-.19.22-.38.24-.7.08-.33-.16-1.38-.51-2.62-1.62-.97-.87-1.62-1.93-1.81-2.26-.19-.32-.02-.5.14-.66.15-.15.33-.38.49-.57.16-.19.22-.32.33-.54.11-.22.05-.4-.03-.57-.08-.16-.73-1.76-1-2.41-.26-.63-.53-.55-.73-.56h-.62c-.22 0-.57.08-.87.4-.3.33-1.14 1.12-1.14 2.72 0 1.6 1.17 3.15 1.33 3.37.16.22 2.3 3.5 5.56 4.91.78.34 1.38.54 1.86.69.78.25 1.49.21 2.05.13.63-.09 1.93-.79 2.2-1.55.27-.76.27-1.42.19-1.55-.08-.14-.3-.22-.62-.38Z"/></svg>';
 
+  // Menú hamburguesa de la cabecera (celular y tablet).
+  function montarMenu() {
+    const boton = document.querySelector('[data-menu]');
+    if (!boton) return;
+    const cabecera = boton.closest('.cabecera');
+    const fijar = (abierto) => {
+      cabecera.classList.toggle('cabecera--abierta', abierto);
+      boton.setAttribute('aria-expanded', String(abierto));
+      boton.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
+    };
+    boton.addEventListener('click', () => fijar(!cabecera.classList.contains('cabecera--abierta')));
+    cabecera.querySelectorAll('.cabecera__nav a').forEach((a) => a.addEventListener('click', () => fijar(false)));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fijar(false); });
+    document.addEventListener('click', (e) => { if (!cabecera.contains(e.target)) fijar(false); });
+  }
+
   function montarWhatsapp() {
     if (location.pathname.startsWith('/admin')) return;
     catalogo().then(({ config = {} }) => {
@@ -330,5 +346,6 @@
     montarCarroLateral();
     montarPie();
     montarWhatsapp();
+    montarMenu();
   });
 })();

@@ -5,10 +5,12 @@
 
   const vitrina = document.querySelector('[data-grilla]');
   const contCategorias = document.querySelector('[data-categorias]');
+  const contSub = document.querySelector('[data-subcategorias]');
   const buscar = document.querySelector('[data-buscar]');
 
   let productos = [];
   let categoria = 'Todos';
+  let subcategoria = 'Todas';
   let termino = '';
 
   const normalizar = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -84,7 +86,7 @@
           ${fotos > 1 ? `<span class="tarjeta__fotos">${fotos} fotos</span>` : ''}
         </button>
         <div class="tarjeta__cuerpo">
-          <span class="tarjeta__cat">${esc(p.categoria)}</span>
+          <span class="tarjeta__cat">${esc(p.categoria)}${p.subcategoria && p.subcategoria !== p.categoria ? ` · ${esc(p.subcategoria)}` : ''}</span>
           <h3 class="tarjeta__nombre"><button class="tarjeta__ver" data-ver="${p.id}">${esc(p.nombre)}</button></h3>
           <span class="tarjeta__formato">${esc(Venta.etiqueta(p, modo))}</span>
           ${p.descripcion ? `<p class="tarjeta__desc">${esc(p.descripcion)}</p>` : ''}
@@ -119,13 +121,23 @@
     const t = normalizar(termino);
     return productos.filter((p) =>
       (categoria === 'Todos' || p.categoria === categoria) &&
-      (!t || normalizar(`${p.nombre} ${p.descripcion} ${p.categoria} ${p.formato}`).includes(t)));
+      (subcategoria === 'Todas' || p.subcategoria === subcategoria) &&
+      (!t || normalizar(`${p.nombre} ${p.descripcion} ${p.categoria} ${p.subcategoria || ''} ${p.formato}`).includes(t)));
   }
+
+  const subcategoriasDe = (c) => [...new Set(productos.filter((p) => p.categoria === c).map((p) => p.subcategoria).filter(Boolean))];
+  // Título de un grupo: "Vegetales · Kilo"; si la subcategoría repite la categoría ("Frutas · Frutas"), solo "Frutas".
+  const tituloGrupo = (c, s) => (s && s !== c ? `${c} · ${s}` : c);
 
   function renderCategorias() {
     const cats = ['Todos', ...new Set(productos.map((p) => p.categoria))];
     contCategorias.innerHTML = cats.map((c) =>
       `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c === categoria}">${esc(c)}</button>`).join('');
+    // Segunda fila con las subcategorías de la categoría elegida (si tiene más de una).
+    const subs = categoria === 'Todos' ? [] : subcategoriasDe(categoria);
+    contSub.classList.toggle('oculto', subs.length < 2);
+    contSub.innerHTML = subs.length < 2 ? '' : ['Todas', ...subs].map((s) =>
+      `<button class="chip chip--sub" data-sub="${esc(s)}" aria-pressed="${s === subcategoria}">${esc(s)}</button>`).join('');
   }
 
   function renderVitrina() {
@@ -140,12 +152,15 @@
     }
     if (termino) {
       vitrina.innerHTML = carrusel(`Resultados para «${termino.trim()}»`, lista);
-    } else if (categoria !== 'Todos') {
-      vitrina.innerHTML = carrusel(categoria, lista);
     } else {
-      // "Todos": un carrusel por categoría, en el orden del catálogo.
+      // Un carrusel por categoría y subcategoría (ej. "Vegetales · Kilo", "Vegetales · Individual"):
+      // las categorías en el orden del catálogo y, dentro de cada una, sus subcategorías juntas.
+      const ordenCat = [...new Set(productos.map((p) => p.categoria))];
       const grupos = new Map();
-      lista.forEach((p) => grupos.set(p.categoria, [...(grupos.get(p.categoria) || []), p]));
+      [...lista].sort((a, b) => ordenCat.indexOf(a.categoria) - ordenCat.indexOf(b.categoria)).forEach((p) => {
+        const titulo = tituloGrupo(p.categoria, p.subcategoria);
+        grupos.set(titulo, [...(grupos.get(titulo) || []), p]);
+      });
       vitrina.innerHTML = [...grupos].map(([c, ps]) => carrusel(c, ps)).join('');
     }
     vitrina.querySelectorAll('[data-carrusel]').forEach(actualizarFlechas);
@@ -179,6 +194,15 @@
     const b = e.target.closest('[data-cat]');
     if (!b) return;
     categoria = b.dataset.cat;
+    subcategoria = 'Todas';
+    renderCategorias();
+    renderVitrina();
+  });
+
+  contSub.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sub]');
+    if (!b) return;
+    subcategoria = b.dataset.sub;
     renderCategorias();
     renderVitrina();
   });
@@ -282,13 +306,13 @@
     const detalles = [
       ['Formato', Venta.kilos(p) ? `Caja de ${Venta.kg(Venta.kilos(p))} kg${p.formato ? ` · ${p.formato}` : ''}` : p.formato],
       ['Venta', Venta.vendeKilo(p) ? `Por caja (por mayor) o ${Venta.bolsa(p) ? 'por bolsa' : 'por kilo'} (al detalle)` : 'Por caja'],
-      ['Categoría', p.categoria],
+      ['Categoría', tituloGrupo(p.categoria, p.subcategoria)],
       ['Temporada', p.temporada],
       ['Disponibilidad', p.stock <= 0 ? 'Agotado por ahora' : disponibles(p, 'caja') <= 3 ? 'Pocas unidades' : 'En stock'],
     ].filter(([, v]) => v);
 
     info.innerHTML = `
-      <span class="sobretitulo">${esc(p.categoria)}</span>
+      <span class="sobretitulo">${esc(tituloGrupo(p.categoria, p.subcategoria))}</span>
       <h2 id="ficha-nombre" class="ficha__nombre">${esc(p.nombre)}</h2>
       ${p.formato ? `<p class="ficha__formato">${esc(p.formato)}</p>` : ''}
       <div class="ficha__insignias">${insignias(p)}</div>

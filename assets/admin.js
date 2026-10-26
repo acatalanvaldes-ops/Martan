@@ -200,6 +200,8 @@
   function renderProductos() {
     document.getElementById('lista-categorias').innerHTML =
       [...new Set(productos.map((p) => p.categoria))].map((c) => `<option value="${esc(c)}">`).join('');
+    document.getElementById('lista-subcategorias').innerHTML =
+      [...new Set(productos.map((p) => p.subcategoria).filter(Boolean))].map((c) => `<option value="${esc(c)}">`).join('');
     if (!productos.length) { contenido.innerHTML = '<div class="vacio">Aún no hay productos.</div>'; return; }
     const ocultos = productos.filter((p) => !p.activo).length;
     // Si el producto aún tiene el precio marcador (3), el campo de precio parte vacío.
@@ -208,8 +210,14 @@
     // Agrupa por categoría (en el orden en que aparece cada una) para que cada categoría sea una sola franja,
     // aunque sus productos tengan números de orden separados (ej. Aperitivos: papas 101 y empanadas 301).
     const posicion = new Map();
-    productos.forEach((p, i) => { if (!posicion.has(p.categoria)) posicion.set(p.categoria, i); });
-    const agrupados = productos.map((p, i) => [p, i]).sort((a, b) => posicion.get(a[0].categoria) - posicion.get(b[0].categoria) || a[1] - b[1]).map(([p]) => p);
+    // Dentro de cada categoría, los productos de una misma subcategoría quedan juntos.
+    const subcat = (p) => `${p.categoria}|${p.subcategoria || ''}`;
+    productos.forEach((p, i) => {
+      if (!posicion.has(p.categoria)) posicion.set(p.categoria, i);
+      if (!posicion.has(subcat(p))) posicion.set(subcat(p), i);
+    });
+    const agrupados = productos.map((p, i) => [p, i]).sort((a, b) => posicion.get(a[0].categoria) - posicion.get(b[0].categoria)
+      || posicion.get(subcat(a[0])) - posicion.get(subcat(b[0])) || a[1] - b[1]).map(([p]) => p);
     contenido.innerHTML = `
       <div class="aviso" style="margin-bottom:12px">
         <strong>Cómo cargar precios:</strong> escribe el <strong>costo neto</strong> (sin IVA) y el <strong>% de margen</strong>:
@@ -235,12 +243,12 @@
         </tr></thead>
         <tbody>${agrupados.map((p) => {
           const cabecera = p.categoria !== categoriaActual
-            ? `<tr class="fila-categoria"><td colspan="12">${esc(p.categoria)}</td></tr>` : '';
+            ? `<tr class="fila-categoria"><td colspan="12"><span class="fila-categoria__txt">${esc(p.categoria)}</span></td></tr>` : '';
           categoriaActual = p.categoria;
           return `${cabecera}
           <tr data-fila="${p.id}">
             <td data-foto-celda="${p.id}">${celdaFoto(p)}</td>
-            <td data-nombre style="${p.activo ? '' : 'opacity:.6'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${esc(p.formato)}</small></td>
+            <td data-nombre class="${p.activo ? '' : 'producto-oculto'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${p.subcategoria ? `<span class="sub-admin">${esc(p.subcategoria)}</span> · ` : ''}${esc(p.formato)}</small></td>
             <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" value="${p.costo ?? ''}" data-campo="costo" placeholder="0" aria-label="Costo neto de ${esc(p.nombre)}"></div></td>
             <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen ?? ''}" data-campo="margen" placeholder="0" aria-label="Margen de ${esc(p.nombre)}"><span>%</span></div></td>
             <td class="col-comision"><div class="campo-pct"><input type="number" min="0" max="49" step="0.01" inputmode="decimal" value="${p.comision ?? 3.19}" data-campo="comision" placeholder="3.19" aria-label="Comisión tarjeta de ${esc(p.nombre)}"><span>%</span></div><small data-calc="comision" class="calc calc--comision">—</small></td>
@@ -630,7 +638,7 @@
       const guardado = await pedir('producto', { method: 'POST', body: datos });
       Object.assign(p, guardado);
       b.textContent = 'Guardado ✓';
-      fila.querySelector('[data-nombre]').style.opacity = p.activo ? '' : '.6';
+      fila.querySelector('[data-nombre]').classList.toggle('producto-oculto', !p.activo);
       setTimeout(() => { b.textContent = 'Guardar'; }, 1500);
     } catch (err) {
       b.disabled = false;
@@ -648,7 +656,7 @@
     document.querySelector('[data-dialogo-msg]').innerHTML = '';
     const f = formProducto.elements;
     const v = p || { activo: true, destacado: false, orden: 0, stock: 0 };
-    ['nombre', 'categoria', 'formato', 'precio', 'precio_anterior', 'stock', 'orden', 'descripcion', ...CAMPOS_FICHA]
+    ['nombre', 'categoria', 'subcategoria', 'formato', 'precio', 'precio_anterior', 'stock', 'orden', 'descripcion', ...CAMPOS_FICHA]
       .forEach((k) => { f[k].value = v[k] ?? ''; });
     if (!p) f.conservacion.value = 'Mantener congelado a −18 °C. Una vez descongelado, no volver a congelar.';
     f.activo.checked = Boolean(v.activo);
@@ -668,7 +676,7 @@
     const f = formProducto.elements;
     const datos = {
       id: editando?.id,
-      nombre: f.nombre.value, categoria: f.categoria.value, formato: f.formato.value,
+      nombre: f.nombre.value, categoria: f.categoria.value, subcategoria: f.subcategoria.value, formato: f.formato.value,
       precio: f.precio.value, precio_anterior: f.precio_anterior.value, stock: f.stock.value, orden: f.orden.value || 0,
       imagen_url: editando?.imagen_url ?? null, // las fotos se administran con el botón de la columna "Foto"
       descripcion: f.descripcion.value,
