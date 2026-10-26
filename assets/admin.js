@@ -97,19 +97,19 @@
     const nuevos = mensajes.filter((m) => m.estado === 'nuevo').length;
     contenido.innerHTML = `
       <p style="color:var(--texto-suave);margin:0 0 12px">${mensajes.length} mensajes · <strong>${nuevos} nuevos</strong></p>
-      <div class="tabla-envoltura"><table>
+      <div class="tabla-envoltura"><table class="tabla-tarjetas">
         <thead><tr><th>Fecha</th><th>Tipo</th><th>Contacto</th><th>Pedido</th><th>Mensaje</th><th>Estado</th></tr></thead>
         <tbody>${mensajes.map((m) => {
           const asunto = encodeURIComponent(`Martan · ${TIPOS_MENSAJE[m.tipo]}${m.pedido_numero ? ` · Pedido N° ${m.pedido_numero}` : ''}`);
           return `
           <tr style="${m.estado === 'cerrado' ? 'opacity:.6' : ''}">
-            <td style="white-space:nowrap">${fecha(m.creado_en)}</td>
-            <td><span class="estado-pill tipo-${m.tipo}">${TIPOS_MENSAJE[m.tipo] || esc(m.tipo)}</span></td>
-            <td><strong>${esc(m.nombre)}</strong><br>RUT ${esc(m.rut)}<br>
+            <td data-label="Fecha" style="white-space:nowrap">${fecha(m.creado_en)}</td>
+            <td data-label="Tipo"><span class="estado-pill tipo-${m.tipo}">${TIPOS_MENSAJE[m.tipo] || esc(m.tipo)}</span></td>
+            <td data-label="Contacto" class="celda-ancha"><strong>${esc(m.nombre)}</strong><br>RUT ${esc(m.rut)}<br>
               <a href="mailto:${esc(m.email)}?subject=${asunto}">${esc(m.email)}</a>${m.telefono ? `<br><a href="tel:${esc(m.telefono)}">${esc(m.telefono)}</a>` : ''}</td>
-            <td>${m.pedido_numero ? `N° ${m.pedido_numero}` : '—'}</td>
-            <td style="max-width:420px;white-space:pre-wrap">${esc(m.mensaje)}</td>
-            <td><select data-mensaje-estado="${m.id}" aria-label="Estado del mensaje">
+            <td data-label="Pedido">${m.pedido_numero ? `N° ${m.pedido_numero}` : '—'}</td>
+            <td data-label="Mensaje" class="celda-completa" style="max-width:420px;white-space:pre-wrap">${esc(m.mensaje)}</td>
+            <td data-label="Estado"><select data-mensaje-estado="${m.id}" aria-label="Estado del mensaje">
               ${Object.entries(ESTADOS_MENSAJE).map(([k, v]) => `<option value="${k}" ${k === m.estado ? 'selected' : ''}>${v}</option>`).join('')}
             </select></td>
           </tr>`;
@@ -148,19 +148,19 @@
     const ventas = pagados.reduce((s, p) => s + p.total, 0);
     contenido.innerHTML = `
       <p style="color:var(--texto-suave);margin:0 0 12px">${pedidos.length} pedidos mostrados · ${pagados.length} pagados · ventas ${clp(ventas)}</p>
-      <div class="tabla-envoltura"><table>
+      <div class="tabla-envoltura"><table class="tabla-tarjetas">
         <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Despacho</th><th>Documento</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
         <tbody>${pedidos.map((p) => `
           <tr>
-            <td><strong>${p.numero}</strong></td>
-            <td>${fecha(p.creado_en)}</td>
-            <td>${esc(p.cliente_nombre)}<br><a href="mailto:${esc(p.cliente_email)}">${esc(p.cliente_email)}</a><br><a href="tel:${esc(p.cliente_telefono)}">${esc(p.cliente_telefono)}</a>${p.cliente_rut ? `<br>${esc(p.cliente_rut)}` : ''}</td>
-            <td>${esc(p.comuna)}<br>${esc(p.direccion)}${p.referencia ? `<br><small>${esc(p.referencia)}</small>` : ''}
+            <td data-label="Pedido"><strong>${p.numero}</strong></td>
+            <td data-label="Fecha">${fecha(p.creado_en)}</td>
+            <td data-label="Cliente" class="celda-ancha">${esc(p.cliente_nombre)}<br><a href="mailto:${esc(p.cliente_email)}">${esc(p.cliente_email)}</a><br><a href="tel:${esc(p.cliente_telefono)}">${esc(p.cliente_telefono)}</a>${p.cliente_rut ? `<br>${esc(p.cliente_rut)}` : ''}</td>
+            <td data-label="Despacho" class="celda-ancha">${esc(p.comuna)}<br>${esc(p.direccion)}${p.referencia ? `<br><small>${esc(p.referencia)}</small>` : ''}
               ${p.notas ? `<br><small><strong>Nota:</strong> ${esc(p.notas)}</small>` : ''}</td>
-            <td>${documento(p)}</td>
-            <td><ul class="detalle-items">${p.pedido_items.map((i) => `<li>${i.cantidad} × ${esc(i.nombre)} <span class="estado-pill" style="padding:1px 7px;font-size:.7rem">${i.modo === 'kilo' ? 'por kilo' : i.modo === 'unidad' ? 'unidad' : 'caja'}</span></li>`).join('')}</ul></td>
-            <td><strong>${clp(p.total)}</strong>${p.costo_despacho ? `<br><small>envío ${clp(p.costo_despacho)}</small>` : ''}</td>
-            <td>
+            <td data-label="Documento" class="celda-ancha">${documento(p)}</td>
+            <td data-label="Productos" class="celda-ancha"><ul class="detalle-items">${p.pedido_items.map((i) => `<li>${i.cantidad} × ${esc(i.nombre)} <span class="estado-pill" style="padding:1px 7px;font-size:.7rem">${i.modo === 'kilo' ? 'por kilo' : i.modo === 'unidad' ? 'unidad' : 'caja'}</span></li>`).join('')}</ul></td>
+            <td data-label="Total"><strong>${clp(p.total)}</strong>${p.costo_despacho ? `<br><small>envío ${clp(p.costo_despacho)}</small>` : ''}</td>
+            <td data-label="Estado">
               <span class="estado-pill" data-e="${p.estado}">${ESTADOS[p.estado]}</span><br>
               <select data-cambiar="${p.id}" aria-label="Cambiar estado del pedido ${p.numero}" style="margin-top:6px">
                 ${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${k === p.estado ? 'selected' : ''}>${v}</option>`).join('')}
@@ -232,55 +232,54 @@
           <th>Producto</th>
           <th>Costo neto<br><small>sin IVA</small></th>
           <th>Margen<br><small>% sobre costo</small></th>
-          <th class="col-comision">Comisión tarjeta<br><small>% sobre neto</small></th>
-          <th>Precio neto</th>
-          <th>IVA<br><small>19%</small></th>
+          <th class="col-comision">Comisión<br>tarjeta<br><small>% sobre neto</small></th>
+          <th>Precio neto<br><small>+ IVA 19%</small></th>
           <th>Precio final<br><small>con IVA</small></th>
-          <th>Ganancia<br><small>después de comisión</small></th>
-          <th>Stock<br><small>kg (o cajas)</small></th>
+          <th>Ganancia<br><small>tras comisión</small></th>
+          <th>Stock<br><small>kg o cajas</small></th>
           <th>Visible</th>
-          <th></th>
+          <th><span class="sr">Acciones</span></th>
         </tr></thead>
         <tbody>${agrupados.map((p) => {
           const cabecera = p.categoria !== categoriaActual
-            ? `<tr class="fila-categoria"><td colspan="12"><span class="fila-categoria__txt">${esc(p.categoria)}</span></td></tr>` : '';
+            ? `<tr class="fila-categoria"><td colspan="11"><span class="fila-categoria__txt">${esc(p.categoria)}</span></td></tr>` : '';
           categoriaActual = p.categoria;
           return `${cabecera}
           <tr data-fila="${p.id}">
             <td data-foto-celda="${p.id}">${celdaFoto(p)}</td>
             <td data-nombre class="${p.activo ? '' : 'producto-oculto'}"><strong>${esc(p.nombre)}</strong>${p.destacado ? ' ★' : ''}<br><small>${p.subcategoria ? `<span class="sub-admin">${esc(p.subcategoria)}</span> · ` : ''}${esc(p.formato)}</small></td>
-            <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" value="${p.costo ?? ''}" data-campo="costo" placeholder="0" aria-label="Costo neto de ${esc(p.nombre)}"></div></td>
-            <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen ?? ''}" data-campo="margen" placeholder="0" aria-label="Margen de ${esc(p.nombre)}"><span>%</span></div></td>
-            <td class="col-comision"><div class="campo-pct"><input type="number" min="0" max="49" step="0.01" inputmode="decimal" value="${p.comision ?? 3.19}" data-campo="comision" placeholder="3.19" aria-label="Comisión tarjeta de ${esc(p.nombre)}"><span>%</span></div><small data-calc="comision" class="calc calc--comision">—</small></td>
-            <td data-calc="neto" class="calc">—</td>
-            <td data-calc="iva" class="calc">—</td>
-            <td><div class="campo-pesos campo-pesos--final"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${precioInicial(p)}" data-campo="precio" placeholder="0" aria-label="Precio final de ${esc(p.nombre)}"></div></td>
-            <td data-calc="ganancia" class="calc">—</td>
-            <td><input class="campo-stock" type="number" min="0" step="0.1" inputmode="numeric" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}"></td>
-            <td style="text-align:center"><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="${esc(p.nombre)} visible en la tienda"></td>
-            <td style="white-space:nowrap">
+            <td data-label="Costo neto"><div class="campo-pesos"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" value="${p.costo ?? ''}" data-campo="costo" placeholder="0" aria-label="Costo neto de ${esc(p.nombre)}"></div></td>
+            <td data-label="Margen"><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen ?? ''}" data-campo="margen" placeholder="0" aria-label="Margen de ${esc(p.nombre)}"><span>%</span></div></td>
+            <td class="col-comision" data-label="Comisión tarjeta"><div class="campo-pct"><input type="number" min="0" max="49" step="0.01" inputmode="decimal" value="${p.comision ?? 3.19}" data-campo="comision" placeholder="3.19" aria-label="Comisión tarjeta de ${esc(p.nombre)}"><span>%</span></div><small data-calc="comision" class="calc calc--comision">—</small></td>
+            <td class="calc" data-label="Precio neto"><span data-calc="neto">—</span><small data-calc="iva" class="calc-iva">—</small></td>
+            <td data-label="Precio final"><div class="campo-pesos campo-pesos--final"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${precioInicial(p)}" data-campo="precio" placeholder="0" aria-label="Precio final de ${esc(p.nombre)}"></div></td>
+            <td data-label="Ganancia"><span data-calc="ganancia" class="calc">—</span></td>
+            <td data-label="Stock"><input class="campo-stock" type="number" min="0" step="0.1" inputmode="numeric" value="${p.stock}" data-campo="stock" aria-label="Stock de ${esc(p.nombre)}"></td>
+            <td class="celda-visible" data-label="Visible"><input type="checkbox" data-campo="activo" ${p.activo ? 'checked' : ''} aria-label="${esc(p.nombre)} visible en la tienda"></td>
+            <td class="acciones-admin">
               <button class="btn btn--azul btn--chico" data-guardar="${p.id}" disabled>Guardar</button>
-              <button class="btn btn--claro btn--chico" data-editar="${p.id}">Editar</button>
-              <button class="btn btn--peligro btn--chico" data-eliminar="${p.id}" title="Eliminar ${esc(p.nombre)}" aria-label="Eliminar ${esc(p.nombre)}">
+              <button class="btn btn--claro btn--chico btn--icono" data-editar="${p.id}" title="Editar ficha de ${esc(p.nombre)}" aria-label="Editar ficha de ${esc(p.nombre)}">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+              </button>
+              <button class="btn btn--peligro btn--chico btn--icono" data-eliminar="${p.id}" title="Eliminar ${esc(p.nombre)}" aria-label="Eliminar ${esc(p.nombre)}">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>
               </button>
             </td>
           </tr>
           <tr class="fila-unidad" data-fila-unidad="${p.id}">
-            <td></td>
+            <td class="celda-vacia"></td>
             <td class="fila-unidad__titulo">
               <strong>↳ Por kilo · al detalle</strong>
               <label class="fila-unidad__n">Kilos por caja <input type="number" min="0" step="0.1" inputmode="decimal" value="${p.kilos_por_caja ?? ''}" data-campo="kilos_por_caja" placeholder="—" aria-label="Kilos por caja de ${esc(p.nombre)}"></label>
               <label class="fila-unidad__n" title="Peso de UNA bolsa en kilos, si el detalle se vende por bolsa cerrada (ej. 2,5 kg; 150 g = 0.15). Vacío = por kilo.">Kg por bolsa <input type="number" min="0" step="0.01" inputmode="decimal" value="${p.kilos_por_bolsa ?? ''}" data-campo="kilos_por_bolsa" placeholder="por kg" aria-label="Kilos por bolsa de ${esc(p.nombre)}"></label>
             </td>
-            <td data-calc="costo_u" class="calc" title="Costo de la caja ÷ kilos por caja">—</td>
-            <td><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_kilo ?? ''}" data-campo="margen_kilo" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
-            <td class="col-comision"><small data-calc="comision_u" class="calc calc--comision" title="Misma comisión del producto">—</small></td>
-            <td data-calc="neto_u" class="calc">—</td>
-            <td data-calc="iva_u" class="calc">—</td>
-            <td><div class="campo-pesos"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${p.precio_kilo ?? ''}" data-campo="precio_kilo" placeholder="—" aria-label="Precio por kilo de ${esc(p.nombre)}"></div></td>
-            <td data-calc="ganancia_u" class="calc">—</td>
-            <td data-calc="cajas" class="calc">—</td>
+            <td data-label="Costo por kg"><span data-calc="costo_u" class="calc" title="Costo de la caja ÷ kilos por caja">—</span></td>
+            <td data-label="Margen detalle"><div class="campo-pct"><input type="number" step="0.1" inputmode="decimal" value="${p.margen_kilo ?? ''}" data-campo="margen_kilo" placeholder="0" aria-label="Margen al detalle de ${esc(p.nombre)}"><span>%</span></div></td>
+            <td class="col-comision" data-label="Comisión"><small data-calc="comision_u" class="calc calc--comision" title="Misma comisión del producto">—</small></td>
+            <td class="calc" data-label="Precio neto"><span data-calc="neto_u">—</span><small data-calc="iva_u" class="calc-iva">—</small></td>
+            <td data-label="Precio por kilo"><div class="campo-pesos"><span>$</span><input type="number" min="0" step="10" inputmode="numeric" value="${p.precio_kilo ?? ''}" data-campo="precio_kilo" placeholder="—" aria-label="Precio por kilo de ${esc(p.nombre)}"></div></td>
+            <td data-label="Ganancia"><span data-calc="ganancia_u" class="calc">—</span></td>
+            <td data-label="Stock"><span data-calc="cajas" class="calc">—</span></td>
             <td colspan="2" class="fila-unidad__nota" data-nota-unidad></td>
           </tr>`;
         }).join('')}
@@ -503,7 +502,7 @@
       const comision = Math.round(neto - neto / (1 + com));
       celda('comision').textContent = `− ${clp(comision)}`;
       celda('neto').textContent = clp(neto);
-      celda('iva').textContent = clp(precio - neto);
+      celda('iva').textContent = `+ IVA ${clp(precio - neto)}`;
       if (costo > 0) {
         const ganancia = neto - comision - costo;
         celda('ganancia').textContent = clp(ganancia);
@@ -554,7 +553,7 @@
       const comision = Math.round(neto - neto / (1 + com));
       celda('comision_u').textContent = `− ${clp(comision)}/kg`;
       celda('neto_u').textContent = clp(neto);
-      celda('iva_u').textContent = clp(precioKg - neto);
+      celda('iva_u').textContent = `+ IVA ${clp(precioKg - neto)}`;
       const g = costoKg ? Math.round(neto - comision - costoKg) : null;
       celda('ganancia_u').textContent = g === null ? '—' : `${clp(g)}/kg`;
       celda('ganancia_u').className = `calc ${g === null ? '' : g < 0 ? 'calc--negativo' : 'calc--positivo'}`;
