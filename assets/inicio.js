@@ -391,7 +391,7 @@
   function renderInfo(datos) {
     const { config = {} } = datos;
     if (config.despacho_gratis_desde) {
-      document.querySelector('[data-texto-despacho]').textContent = `Gratis sobre ${clp(config.despacho_gratis_desde)}`;
+      document.querySelector('[data-texto-despacho]').textContent = `Gratis en compras sobre ${clp(config.despacho_gratis_desde)}`;
     }
   }
 
