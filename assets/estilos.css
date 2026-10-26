@@ -153,7 +153,40 @@ h3 { font-weight: 700; }
 .portada p { font-size: 1.12rem; color: #d7e6ee; max-width: 50ch; }
 .portada__acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .portada__acciones .btn--claro { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .45); }
-.portada__arte { justify-self: center; width: min(400px, 100%); height: auto; filter: drop-shadow(0 26px 50px rgba(0, 0, 0, .35)); }
+/* Línea de contacto humano bajo los botones */
+.portada__persona {
+  display: flex; align-items: center; gap: 12px; margin-top: 26px; max-width: 46ch;
+  color: #d7e6ee; text-decoration: none; font-size: .92rem; line-height: 1.45;
+}
+.portada__persona svg { flex: none; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: #25d366; color: #fff; }
+.portada__persona strong { color: #fff; }
+.portada__persona:hover span { text-decoration: underline; }
+/* Vitrina: polaroids de producto, ficha de ahorro y nota escrita a mano */
+.portada__vitrina { position: relative; justify-self: center; width: min(420px, 100%); min-height: 420px; }
+.portada__polaroid {
+  position: absolute; width: 170px; height: 170px; object-fit: cover;
+  border: 8px solid #fff; border-bottom-width: 26px; border-radius: 4px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+}
+.portada__polaroid--1 { top: 0; left: 0; rotate: -8deg; }
+.portada__polaroid--2 { bottom: 10px; right: 0; rotate: 7deg; }
+.portada__ficha {
+  position: relative; z-index: 1; margin: 70px auto 0; width: min(300px, 100%);
+  padding: 18px; border-radius: 18px; background: #fff; color: var(--texto); box-shadow: 0 24px 60px rgba(0, 0, 0, .4);
+}
+.portada__ficha-titulo { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--turquesa-osc); margin-bottom: 10px; }
+.portada__ficha-producto { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.portada__ficha-producto img, .portada__ficha-producto > :first-child { width: 56px; height: 56px; flex: none; border-radius: 10px; object-fit: cover; overflow: hidden; }
+.portada__ficha-producto strong { font-size: 1rem; line-height: 1.25; }
+.portada__ficha-fila { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 0; border-top: 1px solid var(--borde); font-size: .9rem; }
+.portada__ficha-fila b { font-size: 1.05rem; color: var(--azul-900); white-space: nowrap; }
+.portada__ficha-fila small { color: var(--texto-suave); }
+.portada__ficha-fila--suave b { font-size: .92rem; font-weight: 600; color: var(--texto-suave); }
+.portada__ficha-ahorro { display: block; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: #e3f4ec; color: var(--verde); font-weight: 700; font-size: .88rem; text-align: center; }
+.portada__nota {
+  position: absolute; z-index: 2; right: 6px; top: 34px; rotate: 5deg;
+  padding: 8px 14px; background: var(--mostaza); color: var(--azul-900); border-radius: 4px;
+  font-family: "Caveat", cursive; font-size: 1.55rem; font-weight: 600; line-height: 1.1; box-shadow: 0 10px 22px rgba(0, 0, 0, .3);
+}
 .etiqueta-portada {
   display: flex; align-items: center; gap: 14px; color: var(--mostaza);
   font-size: .8rem; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 18px;
@@ -161,7 +194,11 @@ h3 { font-weight: 700; }
 .etiqueta-portada::before { content: ""; width: 40px; height: 3px; border-radius: 2px; background: var(--mostaza); }
 @media (max-width: 820px) {
   .portada__grid { grid-template-columns: 1fr; padding: 48px 0 56px; }
-  .portada__arte { display: none; }
+  .portada__vitrina { min-height: 0; width: 100%; }
+  .portada__polaroid { display: none; }
+  .portada__ficha { margin: 8px 0 0; width: 100%; max-width: 360px; }
+  .portada__nota { top: -22px; right: -4px; left: auto; font-size: 1.25rem; }
+  .portada__ficha-titulo { padding-right: 120px; }
 }
 
 .beneficios { background: var(--blanco); border-bottom: 1px solid var(--borde); }

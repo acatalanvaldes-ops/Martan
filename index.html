@@ -9,7 +9,7 @@
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Montserrat:wght@300;400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/assets/estilos.css">
   <script src="/assets/tienda.js" defer></script>
   <script src="/assets/inicio.js" defer></script>
@@ -42,16 +42,25 @@
     <section class="portada">
       <div class="contenedor portada__grid">
         <div>
-          <span class="etiqueta-portada">Mayorista para todos</span>
-          <h1>Precio de mayorista, directo a tu puerta</h1>
-          <p>Llévate la caja a precio por mayor o compra solo el kilo que necesitas. Vegetales, frutas, pulpas, pollo, carnes y aperitivos que llegan congelados a cualquier comuna de la Región Metropolitana. ¿Tienes un restaurante o un almacén? Pides factura al pagar.</p>
+          <span class="etiqueta-portada">Hola, somos Martan</span>
+          <h1>Compra como mayorista, aunque sea para tu casa</h1>
+          <p>Vendemos congelados por caja a precio de mayorista, y también por kilo para cuando necesitas menos. Tú eliges; nosotros lo mantenemos en frío y te lo llevamos a la puerta, en cualquier comuna de la Región Metropolitana.</p>
           <div class="portada__acciones">
             <a class="btn btn--hielo" href="#productos">Ver productos</a>
             <a class="btn btn--claro" href="#como-funciona">¿Cómo funciona?</a>
           </div>
+          <a class="portada__persona oculto" data-portada-wsp target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.9-2.8-1.2-4.6-4.1-4.7-4.3-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.2 1.3z"/></svg>
+            <span><strong>¿Tienes una duda?</strong> Escríbenos por WhatsApp. Te responde una persona del equipo, no un robot.</span>
+          </a>
         </div>
-        <!-- Isotipo en versión negativa (manual de identidad Martan) -->
-        <img class="portada__arte" src="/assets/isotipo-negativo.svg" alt="Martan Congelados" width="472" height="360">
+        <!-- Vitrina: un producto real del catálogo con su precio por caja vs. por kilo (se llena en inicio.js) -->
+        <div class="portada__vitrina" aria-hidden="true">
+          <img class="portada__polaroid portada__polaroid--1" src="/assets/productos/frutilla.jpg" alt="" width="180" height="180">
+          <img class="portada__polaroid portada__polaroid--2" src="/assets/productos/pulpa-mix-tropical.jpg" alt="" width="180" height="180">
+          <div class="portada__ficha oculto" data-portada-ficha></div>
+          <span class="portada__nota">¡Te lo llevamos congelado!</span>
+        </div>
       </div>
     </section>
 

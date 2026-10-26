@@ -388,6 +388,29 @@
   });
 
   // ---------- Información dinámica ----------
+  // Portada: muestra con un producto real cuánto se ahorra comprando la caja en vez del kilo.
+  function renderPortada(datos) {
+    const { config = {} } = datos;
+    if (config.whatsapp) {
+      const wsp = document.querySelector('[data-portada-wsp]');
+      wsp.href = `https://wa.me/${encodeURIComponent(config.whatsapp)}?text=${encodeURIComponent('Hola Martan, tengo una consulta.')}`;
+      wsp.classList.remove('oculto');
+    }
+    const candidatos = productos.filter((p) => p.imagen_url && p.stock > 0 && Venta.vendeKilo(p) && Venta.ahorro(p) > 0);
+    if (!candidatos.length) return;
+    // De preferencia un destacado; si no, el que más ahorra.
+    const p = candidatos.find((x) => x.destacado) || candidatos.sort((x, y) => Venta.ahorro(y) - Venta.ahorro(x))[0];
+    const ficha = document.querySelector('[data-portada-ficha]');
+    ficha.innerHTML = `
+      <span class="portada__ficha-titulo">Así se ve el ahorro</span>
+      <div class="portada__ficha-producto">${imagen(p)}<strong>${esc(p.nombre)}</strong></div>
+      <div class="portada__ficha-fila"><span>Caja ${Venta.kg(Venta.kilos(p))} kg <small>por mayor</small></span><b>${clp(p.precio)}</b></div>
+      <div class="portada__ficha-fila portada__ficha-fila--suave"><span>El kilo sale a</span><b>${clp(p.precio / Venta.kilos(p))}</b></div>
+      <div class="portada__ficha-fila portada__ficha-fila--suave"><span>${esc(Venta.nombreDetalle(p))} <small>al detalle</small></span><b>${clp(Venta.precio(p, 'kilo'))}</b></div>
+      <span class="portada__ficha-ahorro">Ahorras ${Venta.ahorro(p)}% llevando la caja</span>`;
+    ficha.classList.remove('oculto');
+  }
+
   function renderInfo(datos) {
     const { config = {} } = datos;
     if (config.despacho_gratis_desde) {
@@ -403,6 +426,7 @@
       renderCategorias();
       renderVitrina();
       renderInfo(datos);
+      renderPortada(datos);
       // ¿Llegó con un enlace directo a un producto?
       const slug = new URLSearchParams(location.search).get('producto');
       const p = slug && productos.find((x) => x.slug === slug);
