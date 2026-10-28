@@ -143,7 +143,7 @@ revoke execute on function marcar_pedido_pagado(uuid, text, integer) from public
 -- Datos de ejemplo (reemplázalos desde el panel /admin o el Table Editor)
 -- ============================================================
 insert into configuracion (id, monto_minimo, despacho_gratis_desde, whatsapp, email_contacto)
-values (1, 15000, 50000, '56900000000', 'contacto@martan.cl')
+values (1, 15000, 70000, '56900000000', 'contacto@martan.cl')
 on conflict (id) do nothing;
 
 insert into zonas_despacho (comuna, costo) values
