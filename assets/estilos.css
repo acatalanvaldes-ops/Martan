@@ -250,6 +250,8 @@ h3 { font-weight: 700; }
 .tarjeta:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
 .tarjeta__foto { position: relative; aspect-ratio: 4 / 3; background: var(--hielo-100); }
 .tarjeta__foto img { width: 100%; height: 100%; object-fit: cover; }
+/* La foto llena el marco 4:3 sin estirarlo: así una foto cuadrada no alarga la tarjeta. */
+.tarjeta__foto > img, .tarjeta__foto > .foto-ph { position: absolute; inset: 0; }
 .tarjeta__insignias { position: absolute; top: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 .insignia { padding: 3px 9px; border-radius: 999px; font-size: .74rem; font-weight: 700; background: var(--blanco); color: var(--azul-900); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 .insignia--oferta { background: var(--turquesa-osc); color: #fff; }
