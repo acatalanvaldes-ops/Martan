@@ -259,7 +259,6 @@ h3 { font-weight: 700; }
 .tarjeta__cat { font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--turquesa-osc); }
 .tarjeta__nombre { font-size: 1.1rem; font-weight: 700; margin: 0; }
 .tarjeta__formato { font-size: .88rem; color: var(--texto-suave); }
-.tarjeta__desc { font-size: .88rem; color: var(--texto-suave); margin: 4px 0 0; }
 .tarjeta__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 12px; }
 /* Precios en Anton, como indica el manual */
 .precio { font-family: var(--fuente-titulos); font-weight: 800; font-size: 1.3rem; letter-spacing: 0; line-height: 1; color: var(--azul-900); }

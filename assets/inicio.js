@@ -89,7 +89,6 @@
           <span class="tarjeta__cat">${esc(p.categoria)}${p.subcategoria && p.subcategoria !== p.categoria ? ` · ${esc(p.subcategoria)}` : ''}</span>
           <h3 class="tarjeta__nombre"><button class="tarjeta__ver" data-ver="${p.id}">${esc(p.nombre)}</button></h3>
           <span class="tarjeta__formato">${esc(Venta.etiqueta(p, modo))}</span>
-          ${p.descripcion ? `<p class="tarjeta__desc">${esc(p.descripcion)}</p>` : ''}
           ${selectorModo(p, modo)}
           <div class="tarjeta__pie">
             ${precioHtml(p, modo)}
